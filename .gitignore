@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.output/
+
+# Cache & Storage
+storage/cache/
+storage/originals/*
+!storage/originals/.gitkeep
+!storage/originals/sample.jpg
+storage/originals/.zenbox/*
+!storage/originals/.zenbox/sample.json
+
+# Databases & local state
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs & temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local

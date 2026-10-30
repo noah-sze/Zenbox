@@ -1,0 +1,13 @@
+{
+  "name": "zenbox-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zenbox - Self-Hosted Visual Second Brain (The Zen Suite)",
+  "author": "Noah Sze",
+  "scripts": {
+    "dev": "pnpm --parallel run dev",
+    "dev:backend": "pnpm --filter zenbox-backend dev",
+    "dev:frontend": "pnpm --filter zenbox-frontend dev",
+    "build": "pnpm --recursive run build"
+  }
+}

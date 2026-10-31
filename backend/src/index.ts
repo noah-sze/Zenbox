@@ -9,6 +9,7 @@ import { runFullIndexScan } from './db/indexer.js';
 import { ThumbnailService, ThumbnailSize } from './services/thumbnailService.js';
 import { MediaManageService, UpdateMediaPayload } from './services/mediaManageService.js';
 import { LibraryService, CreateLibraryPayload, UpdateLibraryPayload } from './services/libraryService.js';
+import { DirectoryService, CreateDirectoryPayload } from './services/directoryService.js';
 import { StatsService } from './services/statsService.js';
 import { AuthService } from './auth/authService.js';
 import { streamFileWithRange } from './utils/stream.js';
@@ -183,21 +184,31 @@ app.post('/api/libraries/:id/scan', async (c) => {
 // Media Query & Streaming Endpoints
 // -------------------------------------------------------------
 
-// List all directories with asset counts, optionally scoped to a library
-app.get('/api/directories', (c) => {
+// List all directories with detailed asset statistics, optionally scoped to a library
+app.get('/api/directories', async (c) => {
   const libraryId = c.req.query('libraryId') ? Number(c.req.query('libraryId')) : undefined;
-  const where = libraryId !== undefined ? 'WHERE library_id = ?' : '';
-  const params = libraryId !== undefined ? [libraryId] : [];
+  try {
+    const dirs = await DirectoryService.listDirectories(libraryId);
+    return c.json({ data: dirs });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '讀取文件夾失敗';
+    return c.json({ error: message }, 500);
+  }
+});
 
-  const dirs = DbClient.queryAll<{ directory: string; count: number }>(
-    `SELECT directory, COUNT(*) as count 
-     FROM media 
-     ${where}
-     GROUP BY directory 
-     ORDER BY directory ASC`,
-    params
-  );
-  return c.json({ data: dirs });
+// Create a new folder on disk under a specific storage library
+app.post('/api/directories', async (c) => {
+  try {
+    const body = await c.req.json<CreateDirectoryPayload>();
+    const created = await DirectoryService.createDirectory(body);
+    return c.json({
+      success: true,
+      data: created
+    }, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '建立文件夾失敗';
+    return c.json({ error: message }, 400);
+  }
 });
 
 // Get media items with library, directory, keyword, sorting, and tag filtering
@@ -233,8 +244,22 @@ app.get('/api/media', (c) => {
   }
 
   if (dirQuery !== undefined) {
-    whereClauses.push('m.directory = ?');
-    queryParams.push(dirQuery);
+    const isExact = c.req.query('exact') === '1' || c.req.query('exact') === 'true';
+    if (isExact) {
+      whereClauses.push('m.directory = ?');
+      queryParams.push(dirQuery);
+    } else {
+      if (dirQuery === '') {
+        // 當過濾庫根目錄且已指定 libraryId 時，涵蓋該庫下全部媒體
+        if (libraryId === undefined) {
+          whereClauses.push('m.directory = ?');
+          queryParams.push('');
+        }
+      } else {
+        whereClauses.push('(m.directory = ? OR m.directory LIKE ?)');
+        queryParams.push(dirQuery, `${dirQuery}/%`);
+      }
+    }
   }
 
   if (keywordQuery) {
@@ -554,7 +579,7 @@ app.post('/api/sync', async (c) => {
 // Batch trigger thumbnail generation for all existing media
 app.post('/api/thumbnails/generate', async (c) => {
   const allMedia = DbClient.queryAll<MediaEntity>(
-    "SELECT * FROM media WHERE mime_type LIKE 'image/%'"
+    "SELECT * FROM media WHERE mime_type LIKE 'image/%' OR mime_type LIKE 'video/%'"
   );
 
   let queued = 0;

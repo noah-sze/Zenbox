@@ -1,77 +1,128 @@
 import React from 'react';
-import { Search, RefreshCw, HardDrive } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Search, RefreshCw } from 'lucide-react';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { Library } from '@/types/media';
 
 interface HeaderProps {
-  mediaCount: number;
   onOpenCommand: () => void;
   onTriggerSync: () => void;
   isSyncing: boolean;
+  // Breadcrumb props
   libraries: Library[];
   activeLibraryId: number | null;
-  onSelectLibrary: (id: number | null) => void;
-  onOpenLibraries: () => void;
+  activeDirectory: string | null;
+  mediaTypeFilter: 'all' | 'image' | 'video';
+  onNavigateRoot: () => void;
+  onNavigateLibrary: (libraryId: number) => void;
+  onNavigateDirectory: (directory: string, libraryId: number) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  mediaCount,
   onOpenCommand,
   onTriggerSync,
   isSyncing,
   libraries,
   activeLibraryId,
-  onSelectLibrary,
-  onOpenLibraries,
+  activeDirectory,
+  mediaTypeFilter,
+  onNavigateRoot,
+  onNavigateLibrary,
+  onNavigateDirectory,
 }) => {
+  const currentLibrary = libraries.find((lib) => lib.id === activeLibraryId);
+
+  // 解析子目錄路徑片段，例如 "2026/architecture" -> ["2026", "architecture"]
+  const directorySegments = activeDirectory
+    ? activeDirectory.split('/').filter(Boolean)
+    : [];
+
+  const getRootLabel = () => {
+    if (mediaTypeFilter === 'image') return '圖片';
+    if (mediaTypeFilter === 'video') return '影片';
+    return '全部媒體';
+  };
+
+  const isAtRoot = activeLibraryId === null && !activeDirectory;
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-black/80 backdrop-blur-md font-mono">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 max-w-7xl mx-auto">
-        {/* Brand & Library Switcher */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold tracking-tight text-white text-base">Zenbox</span>
-            <span className="text-xs text-muted-foreground hidden md:inline">· 視覺化第二大腦</span>
-          </div>
+      <div className="flex h-14 items-center justify-between px-4 sm:px-6 w-full">
+        {/* Left: Sidebar Trigger & Breadcrumb Navigation */}
+        <div className="flex items-center space-x-3 min-w-0 pr-4">
+          <SidebarTrigger />
 
-          {/* Storage Source Switcher Dropdown */}
-          {libraries.length > 0 && (
-            <div className="flex items-center space-x-1 border-l border-border pl-3">
-              <select
-                aria-label="選擇儲存來源"
-                value={activeLibraryId ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  onSelectLibrary(val === '' ? null : Number(val));
-                }}
-                className="bg-card text-xs text-neutral-300 border border-border rounded-sm px-2 py-1 focus:outline-none focus:border-neutral-500 cursor-pointer"
-              >
-                <option value="">全部來源 ({libraries.length})</option>
-                {libraries.map((lib) => (
-                  <option key={lib.id} value={lib.id}>
-                    {lib.name} {lib.is_readonly ? '(唯讀)' : ''}
-                  </option>
-                ))}
-              </select>
+          <div className="h-4 w-px bg-border/60 shrink-0" />
 
-              <button
-                type="button"
-                onClick={onOpenLibraries}
-                className="p-1 rounded-sm border border-border text-muted-foreground hover:text-white hover:border-neutral-500 transition-colors"
-                title="管理儲存來源"
-              >
-                <HardDrive className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+          {/* Breadcrumb Hierarchy */}
+          <Breadcrumb className="min-w-0">
+            <BreadcrumbList className="flex-nowrap overflow-hidden">
+              {/* Root Level: All Media / Media Type */}
+              <BreadcrumbItem className="shrink-0">
+                {isAtRoot ? (
+                  <BreadcrumbPage>{getRootLabel()}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink onClick={onNavigateRoot}>
+                    {getRootLabel()}
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
 
-          <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-mono hidden sm:inline-flex">
-            {mediaCount} 項目
-          </Badge>
+              {/* Library Level */}
+              {currentLibrary && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem className="shrink-0">
+                    {directorySegments.length === 0 ? (
+                      <BreadcrumbPage>{currentLibrary.name}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink onClick={() => onNavigateLibrary(currentLibrary.id)}>
+                        {currentLibrary.name}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </>
+              )}
+
+              {/* Directory Sub-path Levels */}
+              {currentLibrary &&
+                directorySegments.map((segment, index) => {
+                  const isLast = index === directorySegments.length - 1;
+                  const accumulatedPath = directorySegments.slice(0, index + 1).join('/');
+
+                  return (
+                    <React.Fragment key={accumulatedPath}>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem className="truncate">
+                        {isLast ? (
+                          <BreadcrumbPage className="truncate">{segment}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink
+                            onClick={() =>
+                              onNavigateDirectory(accumulatedPath, currentLibrary.id)
+                            }
+                            className="truncate"
+                          >
+                            {segment}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                    </React.Fragment>
+                  );
+                })}
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center space-x-2">
+        {/* Right: Search & Sync Controls */}
+        <div className="flex items-center space-x-2 shrink-0">
           {/* Cmd+K trigger button */}
           <button
             type="button"
@@ -100,4 +151,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

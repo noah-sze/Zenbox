@@ -145,8 +145,8 @@ export class MediaManageService {
       throw new Error('媒體記錄建立失敗');
     }
 
-    // 6. Trigger thumbnail generation in background queue
-    if (mimeType.startsWith('image/')) {
+    // 6. Trigger thumbnail generation in background queue (both images and videos)
+    if (mimeType.startsWith('image/') || mimeType.startsWith('video/')) {
       ThumbnailService.generateThumbnails(createdMedia).catch((err) => {
         console.error(`[Upload] Thumbnail generation error for ${finalFilename}:`, err);
       });

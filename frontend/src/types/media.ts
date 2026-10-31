@@ -39,10 +39,31 @@ export interface Library {
   total_bytes?: number;
 }
 
+export interface DirectoryDetail {
+  directory: string;
+  name: string;
+  parentDirectory: string;
+  libraryId: number;
+  libraryName: string;
+  libraryRoot: string;
+  fullPath: string;
+  mediaCount: number;
+  totalRecursiveCount: number;
+  totalBytes: number;
+  imageCount: number;
+  videoCount: number;
+  subDirectoryCount: number;
+  createdAt: string;
+  updatedAt: string;
+  isReadonly?: boolean;
+  isDefault?: boolean;
+}
+
 export interface ApiResponse<T> {
   data: T;
   page?: number;
   limit?: number;
   count?: number;
 }
+
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { MediaItem, Library } from '@/types/media';
 import { Badge } from '@/components/ui/badge';
-import { X, ExternalLink, Calendar, HardDrive, Maximize2, Folder } from 'lucide-react';
+import { X, ExternalLink, Calendar, HardDrive, Maximize2, Folder, Film } from 'lucide-react';
+import { VideoPlayer } from './VideoPlayer';
 
 interface MediaDetailDialogProps {
   item: MediaItem | null;
@@ -23,14 +24,25 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
     : undefined;
 
   const isImage = item.mime_type.startsWith('image/');
+  const isVideo = item.mime_type.startsWith('video/');
   const previewUrl = `/api/media/${item.id}/thumbnail?size=md`;
   const rawUrl = `/api/media/${item.id}/raw`;
-
 
   const formatSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDuration = (seconds?: number): string => {
+    if (!seconds || seconds <= 0) return '';
+    const totalSecs = Math.floor(seconds);
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (hrs > 0) return `${hrs}:${pad(mins)}:${pad(secs)}`;
+    return `${pad(mins)}:${pad(secs)}`;
   };
 
   return (
@@ -53,8 +65,10 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
             <img
               src={previewUrl}
               alt={item.title}
-              className="max-h-[85vh] w-auto max-w-full object-contain"
+              className="max-h-[85vh] w-auto max-w-full object-contain select-none"
             />
+          ) : isVideo ? (
+            <VideoPlayer key={item.id} item={item} autoPlay />
           ) : (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <span className="text-sm uppercase text-muted-foreground">{item.mime_type}</span>
@@ -62,16 +76,18 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
             </div>
           )}
 
-          {/* Quick open raw link */}
-          <a
-            href={rawUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute bottom-3 right-3 px-2 py-1 rounded-sm bg-black/80 border border-border text-[11px] text-neutral-300 hover:text-white flex items-center space-x-1"
-          >
-            <Maximize2 className="h-3 w-3" />
-            <span>原檔</span>
-          </a>
+          {/* Quick open raw link (shown on images or fallback) */}
+          {isImage && (
+            <a
+              href={rawUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-3 right-3 px-2 py-1 rounded-sm bg-black/80 border border-border text-[11px] text-neutral-300 hover:text-white flex items-center space-x-1"
+            >
+              <Maximize2 className="h-3 w-3" />
+              <span>原檔</span>
+            </a>
+          )}
         </div>
 
         {/* Sidecar Metadata Panel */}
@@ -100,6 +116,14 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">解析度</span>
                   <span className="text-foreground">{item.width} × {item.height}</span>
+                </div>
+              )}
+              {item.duration > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Film className="h-3 w-3" /> 影片長度
+                  </span>
+                  <span className="text-foreground font-mono">{formatDuration(item.duration)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -171,18 +195,29 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
             )}
           </div>
 
-          {/* External URL if present */}
-          {item.source_url && (
+          {/* External URL or Raw File Link */}
+          <div className="space-y-1.5 pt-2">
+            {item.source_url && (
+              <a
+                href={item.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center space-x-1 w-full py-1.5 rounded-sm border border-border text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span>來源連結</span>
+              </a>
+            )}
             <a
-              href={item.source_url}
+              href={rawUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center space-x-1 w-full py-1.5 rounded-sm border border-border text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors"
+              className="flex items-center justify-center space-x-1 w-full py-1.5 rounded-sm bg-neutral-900 border border-neutral-800 text-xs text-neutral-400 hover:text-white hover:border-neutral-700 transition-colors"
             >
-              <ExternalLink className="h-3 w-3" />
-              <span>來源連結</span>
+              <Maximize2 className="h-3 w-3" />
+              <span>開新分頁檢視原檔</span>
             </a>
-          )}
+          </div>
         </div>
       </div>
     </div>

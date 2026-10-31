@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar, MediaTypeFilter } from '@/components/layout/AppSidebar';
 import { Header } from '@/components/layout/Header';
 import { MasonryGrid } from '@/components/media/MasonryGrid';
 import { MediaDetailDialog } from '@/components/media/MediaDetailDialog';
 import { LibraryManageDialog } from '@/components/library/LibraryManageDialog';
+import { CreateFolderDialog } from '@/components/folder/CreateFolderDialog';
+import { FolderDetailDialog } from '@/components/folder/FolderDetailDialog';
+import { FolderOverviewDialog } from '@/components/folder/FolderOverviewDialog';
 import { CommandPalette } from '@/components/palette/CommandPalette';
-import { Badge } from '@/components/ui/badge';
-import { MediaItem, Tag, Library } from '@/types/media';
+import { MediaItem, Tag, Library, DirectoryDetail } from '@/types/media';
 
 export const App: React.FC = () => {
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -13,6 +17,9 @@ export const App: React.FC = () => {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [activeLibraryId, setActiveLibraryId] = useState<number | null>(null);
+  const [directories, setDirectories] = useState<DirectoryDetail[]>([]);
+  const [activeDirectory, setActiveDirectory] = useState<string | null>(null);
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -21,6 +28,15 @@ export const App: React.FC = () => {
   const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
 
+  // Folder Dialog states
+  const [selectedDirForDetail, setSelectedDirForDetail] = useState<DirectoryDetail | null>(null);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState<boolean>(false);
+  const [isFolderOverviewOpen, setIsFolderOverviewOpen] = useState<boolean>(false);
+  const [createFolderDefaults, setCreateFolderDefaults] = useState<{
+    libraryId?: number;
+    parentDir?: string;
+  }>({});
+
   // Fetch Libraries list
   const fetchLibraries = useCallback(async () => {
     try {
@@ -28,6 +44,19 @@ export const App: React.FC = () => {
       if (res.ok) {
         const json = (await res.json()) as { data: Library[] };
         setLibraries(json.data || []);
+      }
+    } catch {
+      // Offline fallback handling
+    }
+  }, []);
+
+  // Fetch Directories list with stats
+  const fetchDirectories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/directories');
+      if (res.ok) {
+        const json = (await res.json()) as { data: DirectoryDetail[] };
+        setDirectories(json.data || []);
       }
     } catch {
       // Offline fallback handling
@@ -47,14 +76,23 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Fetch Media list
+  // Fetch Media list with library, tags, and directory filter
   const fetchMedia = useCallback(
-    async (targetPage: number, tags: string[], libraryId: number | null, append = false) => {
+    async (
+      targetPage: number,
+      tags: string[],
+      libraryId: number | null,
+      dir: string | null,
+      append = false
+    ) => {
       setIsLoading(true);
       try {
         const tagParam = tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : '';
         const libParam = libraryId !== null ? `&libraryId=${libraryId}` : '';
-        const res = await fetch(`/api/media?page=${targetPage}&limit=24${tagParam}${libParam}`);
+        const dirParam = dir !== null ? `&dir=${encodeURIComponent(dir)}` : '';
+        const res = await fetch(
+          `/api/media?page=${targetPage}&limit=24${tagParam}${libParam}${dirParam}`
+        );
         if (res.ok) {
           const json = (await res.json()) as { data: MediaItem[]; count: number };
           const newItems = json.data || [];
@@ -75,23 +113,24 @@ export const App: React.FC = () => {
   // Initial load
   useEffect(() => {
     fetchLibraries();
+    fetchDirectories();
     fetchTags();
-  }, [fetchLibraries, fetchTags]);
+  }, [fetchLibraries, fetchDirectories, fetchTags]);
 
-  // Query media whenever activeTags or activeLibraryId changes
+  // Query media whenever activeTags, activeLibraryId, or activeDirectory changes
   useEffect(() => {
     setPage(1);
-    fetchMedia(1, activeTags, activeLibraryId, false);
-  }, [fetchMedia, activeTags, activeLibraryId]);
+    fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+  }, [fetchMedia, activeTags, activeLibraryId, activeDirectory]);
 
   // Load next page for infinite scroll
   const handleLoadMore = useCallback(() => {
     if (!isLoading && hasMore) {
       const nextPage = page + 1;
       setPage(nextPage);
-      fetchMedia(nextPage, activeTags, activeLibraryId, true);
+      fetchMedia(nextPage, activeTags, activeLibraryId, activeDirectory, true);
     }
-  }, [page, isLoading, hasMore, activeTags, activeLibraryId, fetchMedia]);
+  }, [page, isLoading, hasMore, activeTags, activeLibraryId, activeDirectory, fetchMedia]);
 
   // Tag filter toggle
   const handleToggleTag = (tag: string) => {
@@ -103,76 +142,128 @@ export const App: React.FC = () => {
     });
   };
 
+  // Directory filter selection (Library root or subdirectory)
+  const handleSelectDirectory = (dir: string | null, libraryId?: number) => {
+    if (dir === null) {
+      setActiveDirectory(null);
+      if (libraryId === undefined) {
+        setActiveLibraryId(null);
+      }
+    } else {
+      setActiveDirectory(dir);
+      if (libraryId !== undefined) {
+        setActiveLibraryId(libraryId);
+      }
+    }
+  };
+
   // Full manual sync
   const handleTriggerSync = async () => {
     setIsSyncing(true);
     try {
       await fetch('/api/sync', { method: 'POST' });
       await fetchLibraries();
+      await fetchDirectories();
       await fetchTags();
-      await fetchMedia(1, activeTags, activeLibraryId, false);
+      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
     } finally {
       setIsSyncing(false);
     }
   };
 
+  // Open Create Folder Dialog helper
+  const handleOpenCreateFolder = (libraryId?: number, parentDir?: string) => {
+    setCreateFolderDefaults({
+      libraryId: libraryId || (activeLibraryId !== null ? activeLibraryId : undefined),
+      parentDir: parentDir || '',
+    });
+    setIsCreateFolderOpen(true);
+  };
+
+  // Callback when folder is created
+  const handleFolderCreated = async (createdDir: DirectoryDetail) => {
+    await fetchDirectories();
+    setActiveLibraryId(createdDir.libraryId);
+    setActiveDirectory(createdDir.directory);
+  };
+
+  // Filter items by mediaType (all, image, video)
+  const displayedItems = useMemo(() => {
+    if (mediaTypeFilter === 'image') {
+      return items.filter((item) => item.mime_type.startsWith('image/'));
+    }
+    if (mediaTypeFilter === 'video') {
+      return items.filter((item) => item.mime_type.startsWith('video/'));
+    }
+    return items;
+  }, [items, mediaTypeFilter]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
-      {/* Header with Safe Area support */}
-      <Header
+    <SidebarProvider defaultOpen={true}>
+      {/* Collapsible Left Sidebar with Integrated Library & Folder Tree View */}
+      <AppSidebar
         mediaCount={items.length}
-        onOpenCommand={() => setIsCommandOpen(true)}
-        onTriggerSync={handleTriggerSync}
-        isSyncing={isSyncing}
+        availableTags={availableTags}
+        activeTags={activeTags}
+        onToggleTag={handleToggleTag}
+        onClearTags={() => setActiveTags([])}
         libraries={libraries}
         activeLibraryId={activeLibraryId}
-        onSelectLibrary={setActiveLibraryId}
+        onSelectLibrary={(id) => {
+          setActiveLibraryId(id);
+          setActiveDirectory(null);
+        }}
         onOpenLibraries={() => setIsLibraryOpen(true)}
+        directories={directories}
+        activeDirectory={activeDirectory}
+        onSelectDirectory={handleSelectDirectory}
+        onOpenCreateFolder={handleOpenCreateFolder}
+        onOpenFolderOverview={() => setIsFolderOverviewOpen(true)}
+        onOpenFolderDetail={setSelectedDirForDetail}
+        mediaTypeFilter={mediaTypeFilter}
+        onSelectMediaType={setMediaTypeFilter}
+        isSyncing={isSyncing}
+        onTriggerSync={handleTriggerSync}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
-        {/* Active Tag Filter Bar */}
-        {availableTags.length > 0 && (
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none font-mono">
-            <span className="text-xs text-muted-foreground uppercase shrink-0">標籤:</span>
-            <div className="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
-              {availableTags.map((tag) => {
-                const isActive = activeTags.includes(tag.name);
-                return (
-                  <Badge
-                    key={tag.id}
-                    variant={isActive ? 'active' : 'outline'}
-                    className="cursor-pointer transition-none text-xs"
-                    onClick={() => handleToggleTag(tag.name)}
-                  >
-                    #{tag.name} {tag.count !== undefined && `(${tag.count})`}
-                  </Badge>
-                );
-              })}
-              {activeTags.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTags([])}
-                  className="text-xs text-muted-foreground hover:text-white underline ml-2"
-                >
-                  清除過濾
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Masonry Grid with Infinite Scroll */}
-        <MasonryGrid
-          items={items}
-          isLoading={isLoading}
-          hasMore={hasMore}
-          onLoadMore={handleLoadMore}
-          onTagClick={handleToggleTag}
-          onSelect={setSelectedItem}
+      {/* Main Content Area */}
+      <SidebarInset>
+        {/* Streamlined Header with Hierarchical Breadcrumb */}
+        <Header
+          onOpenCommand={() => setIsCommandOpen(true)}
+          onTriggerSync={handleTriggerSync}
+          isSyncing={isSyncing}
+          libraries={libraries}
+          activeLibraryId={activeLibraryId}
+          activeDirectory={activeDirectory}
+          mediaTypeFilter={mediaTypeFilter}
+          onNavigateRoot={() => {
+            setActiveLibraryId(null);
+            setActiveDirectory(null);
+          }}
+          onNavigateLibrary={(libId) => {
+            setActiveLibraryId(libId);
+            setActiveDirectory('');
+          }}
+          onNavigateDirectory={(dir, libId) => {
+            setActiveLibraryId(libId);
+            setActiveDirectory(dir);
+          }}
         />
-      </main>
+
+        {/* Main Scrollable Canvas with direct Masonry Grid */}
+        <div className="flex-1 w-full px-2.5 sm:px-6 py-4 space-y-4 max-w-[2000px] mx-auto font-mono">
+          {/* Masonry Grid with Infinite Scroll */}
+          <MasonryGrid
+            items={displayedItems}
+            isLoading={isLoading}
+            hasMore={hasMore}
+            onLoadMore={handleLoadMore}
+            onTagClick={handleToggleTag}
+            onSelect={setSelectedItem}
+          />
+        </div>
+      </SidebarInset>
 
       {/* Desktop Command Palette (Cmd+K) */}
       <CommandPalette
@@ -191,8 +282,40 @@ export const App: React.FC = () => {
         libraries={libraries}
         onLibrariesChanged={async () => {
           await fetchLibraries();
-          await fetchMedia(1, activeTags, activeLibraryId, false);
+          await fetchDirectories();
+          await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
         }}
+      />
+
+      {/* Create Folder Dialog */}
+      <CreateFolderDialog
+        open={isCreateFolderOpen}
+        onClose={() => setIsCreateFolderOpen(false)}
+        libraries={libraries}
+        defaultLibraryId={createFolderDefaults.libraryId}
+        defaultParentDir={createFolderDefaults.parentDir}
+        onFolderCreated={handleFolderCreated}
+      />
+
+      {/* Single Folder Detail Dialog */}
+      <FolderDetailDialog
+        directory={selectedDirForDetail}
+        onClose={() => setSelectedDirForDetail(null)}
+        onSelectDirectory={(dir) => handleSelectDirectory(dir.directory, dir.libraryId)}
+        onCreateSubfolder={(dir) => handleOpenCreateFolder(dir.libraryId, dir.directory)}
+      />
+
+      {/* All Libraries Folders Overview Dialog */}
+      <FolderOverviewDialog
+        open={isFolderOverviewOpen}
+        onClose={() => setIsFolderOverviewOpen(false)}
+        directories={directories}
+        libraries={libraries}
+        activeLibraryId={activeLibraryId}
+        onSelectDirectory={(dir) => handleSelectDirectory(dir.directory, dir.libraryId)}
+        onOpenCreate={(libId, parentDir) => handleOpenCreateFolder(libId, parentDir)}
+        onOpenDetail={setSelectedDirForDetail}
+        onRefresh={fetchDirectories}
       />
 
       {/* Media Detail Instant Pop Dialog */}
@@ -202,9 +325,8 @@ export const App: React.FC = () => {
         onTagClick={handleToggleTag}
         libraries={libraries}
       />
-    </div>
+    </SidebarProvider>
   );
 };
 
 export default App;
-

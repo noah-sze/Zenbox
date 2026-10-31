@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem } from '@/types/media';
 import { Badge } from '@/components/ui/badge';
+import { Film } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MediaCardProps {
@@ -12,6 +13,16 @@ interface MediaCardProps {
 export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isHoverPreviewing, setIsHoverPreviewing] = useState(false);
+
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const isImage = item.mime_type.startsWith('image/');
+  const isVideo = item.mime_type.startsWith('video/');
+  const isVisual = isImage || isVideo;
+  const thumbnailUrl = `/api/media/${item.id}/thumbnail?size=sm`;
+  const rawVideoUrl = `/api/media/${item.id}/raw`;
 
   // Format file size in KB or MB
   const formatSize = (bytes: number): string => {
@@ -30,26 +41,81 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
     }
   };
 
+  // Format video duration
+  const formatDuration = (seconds?: number): string => {
+    if (!seconds || seconds <= 0) return '';
+    const totalSecs = Math.floor(seconds);
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (hrs > 0) return `${hrs}:${pad(mins)}:${pad(secs)}`;
+    return `${pad(mins)}:${pad(secs)}`;
+  };
+
+  // Hover video micro-preview handling
+  const handleMouseEnter = () => {
+    if (!isVideo) return;
+    hoverTimerRef.current = setTimeout(() => {
+      setIsHoverPreviewing(true);
+    }, 350);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    if (isHoverPreviewing) {
+      setIsHoverPreviewing(false);
+      if (previewVideoRef.current) {
+        previewVideoRef.current.pause();
+        previewVideoRef.current.currentTime = 0;
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
+
   // Prevent layout shifts with exact aspect-ratio placeholder
   const aspectRatioStyle: React.CSSProperties =
     item.width > 0 && item.height > 0
       ? { aspectRatio: `${item.width} / ${item.height}` }
       : { aspectRatio: '4 / 3' };
 
-  const isImage = item.mime_type.startsWith('image/');
-  const thumbnailUrl = `/api/media/${item.id}/thumbnail?size=sm`;
+  const handleClick = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    if (isHoverPreviewing) {
+      setIsHoverPreviewing(false);
+      if (previewVideoRef.current) {
+        previewVideoRef.current.pause();
+        previewVideoRef.current.removeAttribute('src');
+        previewVideoRef.current.load();
+      }
+    }
+    onSelect?.(item);
+  };
 
   return (
     <div
-      onClick={() => onSelect?.(item)}
-      className="group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card transition-colors hover:border-neutral-500 shadow-none cursor-pointer select-none"
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card transition-colors hover:border-neutral-500 shadow-none cursor-pointer select-none font-mono w-full min-w-0"
     >
       {/* Media Aspect Ratio Container / Exact Placeholder */}
       <div
         style={aspectRatioStyle}
-        className="relative w-full overflow-hidden bg-secondary flex items-center justify-center min-h-[140px]"
+        className="relative w-full overflow-hidden bg-secondary flex items-center justify-center min-h-[90px] sm:min-h-[120px]"
       >
-        {isImage && !hasError ? (
+        {isVisual && !hasError ? (
           <>
             {/* Loading skeleton pulse prior to decode */}
             {!isLoaded && (
@@ -59,7 +125,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
                 </span>
               </div>
             )}
-            {/* Sharp WebP Thumbnail */}
+
+            {/* Poster Thumbnail */}
             <img
               src={thumbnailUrl}
               alt={item.title}
@@ -71,29 +138,56 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
                 isLoaded ? 'opacity-100' : 'opacity-0'
               )}
             />
+
+            {/* Hover Video Scrubbing Preview */}
+            {isVideo && isHoverPreviewing && (
+              <video
+                ref={previewVideoRef}
+                src={rawVideoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover z-10"
+              />
+            )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center p-4 text-center">
-            <div className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground mb-2">
-              <span className="text-[10px] uppercase font-mono">{item.filename.split('.').pop()}</span>
+          <div className="flex flex-col items-center justify-center p-3 text-center">
+            <div className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground mb-1.5">
+              <span className="text-[9px] uppercase font-mono">{item.filename.split('.').pop()}</span>
             </div>
-            <span className="text-xs font-semibold text-foreground truncate max-w-[200px]">{item.title}</span>
+            <span className="text-xs font-semibold text-foreground truncate max-w-[160px]">
+              {item.title}
+            </span>
           </div>
         )}
 
-        {/* Resolution tag indicator if available */}
-        {item.width > 0 && item.height > 0 && (
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            {item.width}×{item.height}
+        {/* Video Icon Badge (top-left) */}
+        {isVideo && (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
+            <Film className="h-3 w-3" />
+            <span>影片</span>
           </div>
         )}
+
+        {/* Duration / Resolution indicator tag (bottom-right of preview) */}
+        {isVideo && item.duration > 0 ? (
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white z-20">
+            {formatDuration(item.duration)}
+          </div>
+        ) : item.width > 0 && item.height > 0 ? (
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            {item.width}×{item.height}
+          </div>
+        ) : null}
       </div>
 
       {/* Metadata & Tag Footer */}
-      <div className="flex flex-col p-3 space-y-2 border-t border-border bg-black">
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-          <span className="truncate max-w-[120px] font-mono">{formatSize(item.file_size)}</span>
-          <span className="font-mono">{formatDate(item.added_at)}</span>
+      <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 sm:space-y-2 border-t border-border bg-black">
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground gap-1">
+          <span className="truncate max-w-[80px] sm:max-w-[120px] font-mono">{formatSize(item.file_size)}</span>
+          <span className="font-mono shrink-0">{formatDate(item.added_at)}</span>
         </div>
 
         {/* Tags badge list */}
@@ -103,7 +197,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
               <Badge
                 key={tag}
                 variant="outline"
-                className="cursor-pointer text-[10px] py-0 px-1.5 hover:bg-white hover:text-black hover:border-white transition-none"
+                className="cursor-pointer text-[9px] sm:text-[10px] py-0 px-1 sm:px-1.5 hover:bg-white hover:text-black hover:border-white transition-none shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   onTagClick?.(tag);

@@ -40,6 +40,18 @@
 
   /* Frosted Glass Overlay with built-in Alpha (prevents WebKit color-mix bugs) */
   --overlay: rgba(0, 0, 0, 0.82);
+
+  /* Sidebar Design Tokens */
+  --sidebar-background: #050505;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #262626;
+  --sidebar-ring: #ededed;
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3.5rem;
 }
 
 * {

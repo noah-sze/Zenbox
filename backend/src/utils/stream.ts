@@ -32,10 +32,22 @@ export async function streamFileWithRange(
     });
   }
 
-  // Parse Range header (e.g. "bytes=0-1024" or "bytes=1024-")
-  const parts = rangeHeader.replace(/bytes=/, '').split('-');
-  const start = parseInt(parts[0], 10);
-  const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+  // Parse Range header (e.g. "bytes=0-1024", "bytes=1024-", or "bytes=-1024")
+  const rangeStr = rangeHeader.replace(/bytes=/, '').trim();
+  const parts = rangeStr.split('-');
+  
+  let start: number;
+  let end: number;
+
+  if (!parts[0] && parts[1]) {
+    // Suffix range: bytes=-500 (last 500 bytes)
+    const suffix = parseInt(parts[1], 10);
+    start = Math.max(0, fileSize - suffix);
+    end = fileSize - 1;
+  } else {
+    start = parseInt(parts[0], 10);
+    end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+  }
 
   if (isNaN(start) || start >= fileSize || end >= fileSize || start > end) {
     return new Response('Requested Range Not Satisfiable', {
@@ -48,6 +60,14 @@ export async function streamFileWithRange(
 
   const chunkSize = end - start + 1;
   const nodeStream = fs.createReadStream(filePath, { start, end });
+
+  // Cleanup file descriptor if browser client disconnects or aborts
+  if (c.req.raw.signal) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      nodeStream.destroy();
+    });
+  }
+
   const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
   return new Response(webStream, {

@@ -164,7 +164,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         'group relative flex flex-col overflow-hidden rounded-sm border bg-card transition-colors shadow-none cursor-pointer select-none font-mono w-full min-w-0',
         isSelected
           ? 'border-foreground ring-1 ring-foreground'
-          : 'border-border hover:border-neutral-500'
+          : 'border-border hover:border-foreground'
       )}
     >
       {/* Multi-Select Checkbox overlay */}
@@ -179,8 +179,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           isSelected
             ? 'bg-foreground border-foreground text-background opacity-100'
             : isSelectionMode
-            ? 'bg-black/60 border-white/60 text-transparent opacity-90 hover:opacity-100 hover:border-white'
-            : 'bg-black/60 border-white/40 text-transparent opacity-0 group-hover:opacity-100 hover:border-white'
+            ? 'bg-card border-border text-transparent opacity-90 hover:opacity-100 hover:border-foreground'
+            : 'bg-card border-border text-transparent opacity-0 group-hover:opacity-100 hover:border-foreground'
         )}
         title={isSelected ? '取消選取' : '選取'}
       >
@@ -196,8 +196,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           <>
             {/* Loading skeleton pulse prior to decode */}
             {!isLoaded && (
-              <div className="absolute inset-0 bg-neutral-900 animate-pulse flex items-center justify-center">
-                <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">
+              <div className="absolute inset-0 bg-secondary animate-pulse flex items-center justify-center">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
                   {item.filename.split('.').pop()}
                 </span>
               </div>
@@ -206,7 +206,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
             {/* Poster Thumbnail */}
             <img
               src={thumbnailUrl}
-              alt={item.title}
+              alt={item.title || item.filename}
               loading="lazy"
               onLoad={() => setIsLoaded(true)}
               onError={() => setHasError(true)}
@@ -231,19 +231,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center p-4 text-center w-full h-full select-none">
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <div className="h-11 w-11 rounded-sm border border-border bg-card flex items-center justify-center text-foreground group-hover:border-foreground/40 transition-colors">
-                {isBookmarkItem ? <Globe className="h-6 w-6 stroke-[1.5]" /> : getDocumentIcon(ext, item.mime_type)}
-              </div>
-              <span className="px-2 py-0.5 rounded-sm bg-secondary text-[10px] font-mono font-bold tracking-widest uppercase border border-border text-foreground">
-                {isBookmarkItem ? 'URL' : (ext.replace('.', '') || 'FILE')}
-              </span>
+            <div className="h-11 w-11 rounded-sm border border-border bg-card flex items-center justify-center text-foreground group-hover:border-foreground transition-colors mb-2">
+              {isBookmarkItem ? <Globe className="h-6 w-6 stroke-[1.5]" /> : getDocumentIcon(ext, item.mime_type)}
             </div>
-            <span className="text-xs font-medium text-foreground truncate max-w-[85%] mt-2.5">
-              {item.title || item.filename}
+            <span className="px-2 py-0.5 rounded-sm bg-secondary text-[10px] font-mono font-bold tracking-widest uppercase border border-border text-foreground">
+              {isBookmarkItem ? 'URL' : (ext.replace('.', '') || 'FILE')}
             </span>
             {isBookmarkItem && item.bookmark?.domain && (
-              <span className="text-[10px] text-muted-foreground truncate max-w-[80%] mt-0.5">
+              <span className="text-[10px] text-muted-foreground truncate max-w-[80%] mt-1.5 font-mono">
                 {item.bookmark.domain}
               </span>
             )}
@@ -252,36 +247,39 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
         {/* Media Type Badge (top-left) */}
         {isVideo ? (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[10px] font-mono text-foreground flex items-center gap-1 z-20">
             <Film className="h-3 w-3" />
             <span>影片</span>
           </div>
-        ) : isBookmarkItem ? (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
+        ) : isBookmarkItem && hasSnapshot ? (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[10px] font-mono text-foreground flex items-center gap-1 z-20">
             <Globe className="h-3 w-3" />
             <span className="truncate max-w-[120px]">{item.bookmark?.domain || '書籤'}</span>
-          </div>
-        ) : !isVisual ? (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
-            <FileText className="h-3 w-3" />
-            <span>文件</span>
           </div>
         ) : null}
 
         {/* Duration / Resolution indicator tag (bottom-right of preview) */}
         {isVideo && item.duration > 0 ? (
-          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white z-20">
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[10px] font-mono text-foreground z-20">
             {formatDuration(item.duration)}
           </div>
         ) : item.width > 0 && item.height > 0 ? (
-          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-            {item.width}×{item.height}
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[9px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            {item.width} × {item.height}
           </div>
         ) : null}
       </div>
 
       {/* Metadata & Tag Footer */}
-      <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 sm:space-y-2 border-t border-border bg-card">
+      <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 border-t border-border bg-card">
+        {/* Asset Title / Filename */}
+        <span
+          className="text-xs font-mono font-medium text-foreground truncate"
+          title={item.title || item.filename}
+        >
+          {item.title || item.filename}
+        </span>
+
         <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground gap-1">
           <span className="truncate max-w-[80px] sm:max-w-[120px] font-mono">
             {isBookmarkItem ? (item.bookmark?.domain || '書籤') : formatSize(item.file_size)}

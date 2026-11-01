@@ -116,6 +116,8 @@ export interface SystemStats {
     total: number;
     images: number;
     videos: number;
+    documents?: number;
+    bookmarks?: number;
     other: number;
   };
   tags: {

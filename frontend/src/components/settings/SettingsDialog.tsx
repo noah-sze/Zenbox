@@ -210,7 +210,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             {/* Title */}
             <div className="flex items-center space-x-2">
               <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                系統設置
+                系統設定
               </span>
             </div>
 
@@ -223,11 +223,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   'flex items-center space-x-2 px-3 py-2 rounded-sm text-xs transition-none text-left shrink-0',
                   activeTab === 'general'
                     ? 'bg-accent text-foreground font-medium border border-border'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 <Sliders className="h-3.5 w-3.5 shrink-0" />
-                <span>常規偏好</span>
+                <span>偏好</span>
               </button>
 
               <button
@@ -237,11 +237,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   'flex items-center space-x-2 px-3 py-2 rounded-sm text-xs transition-none text-left shrink-0',
                   activeTab === 'appearance'
                     ? 'bg-accent text-foreground font-medium border border-border'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 <Palette className="h-3.5 w-3.5 shrink-0" />
-                <span>外觀主題</span>
+                <span>主題</span>
               </button>
 
               <button
@@ -251,7 +251,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   'flex items-center space-x-2 px-3 py-2 rounded-sm text-xs transition-none text-left shrink-0',
                   activeTab === 'storage'
                     ? 'bg-accent text-foreground font-medium border border-border'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 <HardDrive className="h-3.5 w-3.5 shrink-0" />
@@ -265,11 +265,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   'flex items-center space-x-2 px-3 py-2 rounded-sm text-xs transition-none text-left shrink-0',
                   activeTab === 'maintenance'
                     ? 'bg-accent text-foreground font-medium border border-border'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 <Wrench className="h-3.5 w-3.5 shrink-0" />
-                <span>維護與索引</span>
+                <span>維護</span>
               </button>
 
               <button
@@ -279,19 +279,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   'flex items-center space-x-2 px-3 py-2 rounded-sm text-xs transition-none text-left shrink-0',
                   activeTab === 'system'
                     ? 'bg-accent text-foreground font-medium border border-border'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 <Info className="h-3.5 w-3.5 shrink-0" />
-                <span>系統指標</span>
+                <span>指標</span>
               </button>
             </nav>
           </div>
 
           {/* Footer Branding in Sidebar */}
-          <div className="p-4 border-t border-border/60 text-[10px] text-muted-foreground hidden md:block">
+          <div className="p-4 border-t border-border text-[10px] text-muted-foreground hidden md:block">
             <div>Zenbox v0.1.0</div>
-            <div className="text-[9px] text-muted-foreground/80">The Zen Suite</div>
+            <div className="text-[9px] text-muted-foreground">The Zen Suite</div>
           </div>
         </div>
 
@@ -300,11 +300,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           {/* Header Bar */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background shrink-0">
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              {activeTab === 'general' && '常規偏好'}
-              {activeTab === 'appearance' && '外觀與主題'}
-              {activeTab === 'storage' && '儲存庫配置'}
-              {activeTab === 'maintenance' && '索引與快取維護'}
-              {activeTab === 'system' && '客觀系統指標'}
+              {activeTab === 'general' && '偏好'}
+              {activeTab === 'appearance' && '外觀主題'}
+              {activeTab === 'storage' && '儲存庫'}
+              {activeTab === 'maintenance' && '維護'}
+              {activeTab === 'system' && '系統指標'}
             </h3>
 
             <Button
@@ -348,7 +348,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       />
                     </div>
 
-                    <div className="border-t border-border/40" />
+                    <div className="border-t border-border" />
 
                     {/* Video Micro Preview Toggle */}
                     <div className="flex items-center justify-between">
@@ -467,13 +467,13 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           className={cn(
                             'flex flex-col text-left p-3 rounded-sm border transition-none cursor-pointer group',
                             isSelected
-                              ? 'border-primary bg-accent/60 ring-1 ring-primary'
-                              : 'border-border bg-card hover:border-neutral-500'
+                              ? 'border-primary bg-accent ring-1 ring-primary'
+                              : 'border-border bg-card hover:border-foreground'
                           )}
                         >
                           {/* Mini High-Fidelity Preview Box */}
                           <div
-                            className="w-full h-16 rounded-sm border border-border/80 overflow-hidden mb-3 relative flex select-none"
+                            className="w-full h-16 rounded-sm border border-border overflow-hidden mb-3 relative flex select-none"
                             style={{
                               backgroundColor:
                                 mode.id === 'system' ? '#18181b' : mode.bgHex,
@@ -481,7 +481,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           >
                             {/* Mini Sidebar */}
                             <div
-                              className="w-10 border-r border-border/60 p-1 flex flex-col justify-between shrink-0"
+                              className="w-10 border-r border-border p-1 flex flex-col justify-between shrink-0"
                               style={{
                                 backgroundColor:
                                   mode.id === 'light'
@@ -494,38 +494,38 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                               }}
                             >
                               <div className="space-y-1">
-                                <div className="h-1.5 w-4 rounded-[1px] bg-muted-foreground/50" />
-                                <div className="h-1 w-6 rounded-[1px] bg-muted-foreground/30" />
-                                <div className="h-1 w-5 rounded-[1px] bg-muted-foreground/30" />
+                                <div className="h-1.5 w-4 rounded-[1px] bg-muted-foreground opacity-50" />
+                                <div className="h-1 w-6 rounded-[1px] bg-muted-foreground opacity-30" />
+                                <div className="h-1 w-5 rounded-[1px] bg-muted-foreground opacity-30" />
                               </div>
-                              <div className="h-1 w-3 rounded-[1px] bg-muted-foreground/40" />
+                              <div className="h-1 w-3 rounded-[1px] bg-muted-foreground opacity-40" />
                             </div>
 
                             {/* Mini Main Canvas */}
                             <div className="flex-1 p-1.5 flex flex-col justify-between">
                               {/* Top Bar */}
-                              <div className="h-2 border-b border-border/40 flex items-center justify-between pb-1">
-                                <div className="h-1 w-8 rounded-[1px] bg-muted-foreground/50" />
-                                <div className="h-1 w-2 rounded-[1px] bg-muted-foreground/50" />
+                              <div className="h-2 border-b border-border flex items-center justify-between pb-1">
+                                <div className="h-1 w-8 rounded-[1px] bg-muted-foreground opacity-50" />
+                                <div className="h-1 w-2 rounded-[1px] bg-muted-foreground opacity-50" />
                               </div>
                               {/* Masonry mini cards */}
                               <div className="grid grid-cols-3 gap-1">
                                 <div
-                                  className="h-6 rounded-[1px] border border-border/40"
+                                  className="h-6 rounded-[1px] border border-border"
                                   style={{
                                     backgroundColor:
                                       mode.id === 'light' ? '#f4f4f5' : mode.cardHex,
                                   }}
                                 />
                                 <div
-                                  className="h-6 rounded-[1px] border border-border/40"
+                                  className="h-6 rounded-[1px] border border-border"
                                   style={{
                                     backgroundColor:
                                       mode.id === 'light' ? '#f4f4f5' : mode.cardHex,
                                   }}
                                 />
                                 <div
-                                  className="h-6 rounded-[1px] border border-border/40"
+                                  className="h-6 rounded-[1px] border border-border"
                                   style={{
                                     backgroundColor:
                                       mode.id === 'light' ? '#f4f4f5' : mode.cardHex,
@@ -552,7 +552,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                 variant="outline"
                                 className="text-[9px] px-1 py-0 h-4 border-primary text-primary"
                               >
-                                當前套用
+                                使用中
                               </Badge>
                             )}
                           </div>
@@ -566,7 +566,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 {/* 2. 焦點強調微色 */}
-                <div className="space-y-3 pt-3 border-t border-border/60">
+                <div className="space-y-3 pt-3 border-t border-border">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                       焦點強調色
@@ -587,12 +587,12 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           className={cn(
                             'flex items-center space-x-2 px-3 py-1.5 rounded-sm border transition-none cursor-pointer',
                             isSelected
-                              ? 'border-primary bg-accent/60 ring-1 ring-primary'
-                              : 'border-border bg-card hover:border-neutral-500'
+                              ? 'border-primary bg-accent ring-1 ring-primary'
+                              : 'border-border bg-card hover:border-foreground'
                           )}
                         >
                           <div
-                            className="h-3 w-3 rounded-full shrink-0 border border-black/20"
+                            className="h-3 w-3 rounded-full shrink-0 border border-border"
                             style={{ backgroundColor: accent.colorHex }}
                           />
                           <span className="text-xs font-mono text-foreground">
@@ -606,7 +606,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 {/* 3. 介面排版密度 */}
-                <div className="space-y-3 pt-3 border-t border-border/60">
+                <div className="space-y-3 pt-3 border-t border-border">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                       介面排版密度
@@ -623,8 +623,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       className={cn(
                         'flex flex-col text-left p-3 rounded-sm border transition-none cursor-pointer',
                         themeSettings.density === 'comfortable'
-                          ? 'border-primary bg-accent/60 ring-1 ring-primary'
-                          : 'border-border bg-card hover:border-neutral-500'
+                          ? 'border-primary bg-accent ring-1 ring-primary'
+                          : 'border-border bg-card hover:border-foreground'
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -646,8 +646,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       className={cn(
                         'flex flex-col text-left p-3 rounded-sm border transition-none cursor-pointer',
                         themeSettings.density === 'compact'
-                          ? 'border-primary bg-accent/60 ring-1 ring-primary'
-                          : 'border-border bg-card hover:border-neutral-500'
+                          ? 'border-primary bg-accent ring-1 ring-primary'
+                          : 'border-border bg-card hover:border-foreground'
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -675,10 +675,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      已掛載儲存庫 ({libraries.length})
+                      儲存庫 ({libraries.length})
                     </h4>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">
-                      原生檔案系統為唯一宇宙事實來源，原檔唯讀不可變
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      原檔本機保存，唯讀不可變
                     </p>
                   </div>
 
@@ -692,7 +692,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     }}
                   >
                     <HardDrive className="h-3 w-3" />
-                    <span>管理儲存庫</span>
+                    <span>管理</span>
                   </Button>
                 </div>
 
@@ -706,7 +706,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-foreground font-mono">{lib.name}</span>
                           {lib.is_default ? (
-                            <Badge variant="outline" className="text-[9px] py-0 px-1 border-foreground/20 text-foreground">
+                            <Badge variant="outline" className="text-[9px] py-0 px-1 border-foreground text-foreground">
                               預設
                             </Badge>
                           ) : null}
@@ -730,7 +730,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 {/* Storage Architecture Contract */}
-                <div className="p-4 rounded-sm border border-border bg-muted/40 space-y-2">
+                <div className="p-4 rounded-sm border border-border bg-secondary space-y-2">
                   <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>真理源架構契約 (Decoupled Monolith)</span>
@@ -739,23 +739,23 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     Zenbox 不將資產鎖定於黑盒資料庫中。所有檔案存放於本機檔案系統，每個項目伴隨同名
                     <code className="text-foreground font-mono mx-1">.json</code> Sidecar 元數據文件。
                     合集清單存放於 <code className="text-foreground font-mono mx-1">.zenbox/collections/</code>。
-                    脫離 Zenbox，您的資料夾依然具備完全的人類可讀性。
+                    脫離 Zenbox，資料夾依然具備完全的人類可讀性。
                   </p>
                 </div>
               </div>
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* TAB 3: 維護與索引                                             */}
+            {/* TAB 4: 維護與索引                                             */}
             {/* ------------------------------------------------------------- */}
             {activeTab === 'maintenance' && (
               <div className="space-y-6">
                 <div>
                   <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                    磁碟快取與資料庫維護
+                    維護
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    SQLite 資料庫與快取皆為可拋棄型索引，可隨時清空重建
+                    資料庫與快取為可拋棄型索引，可隨時重建
                   </p>
                 </div>
 
@@ -765,10 +765,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     <div className="space-y-1">
                       <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
                         <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>檔案系統全盤比對</span>
+                        <span>同步索引</span>
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        掃描原生儲存庫，依據檔案與 Sidecar JSON 補齊 SQLite 索引
+                        掃描儲存庫，依據檔案與 Sidecar JSON 補齊索引
                       </div>
                     </div>
 
@@ -780,7 +780,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       onClick={() => onTriggerSync()}
                     >
                       <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
-                      <span>{isSyncing ? '比對中' : '立即比對'}</span>
+                      <span>{isSyncing ? '同步中' : '同步'}</span>
                     </Button>
                   </div>
 
@@ -789,10 +789,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     <div className="space-y-1">
                       <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
                         <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>批次重新生成全量縮圖</span>
+                        <span>重新生成縮圖</span>
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        透過 Sharp 與 FFmpeg 後台佇列重新生成各尺寸縮圖與影片首幀
+                        透過 Sharp 與 FFmpeg 佇列重新生成縮圖
                       </div>
                     </div>
 
@@ -804,7 +804,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       onClick={handleGenerateThumbnails}
                     >
                       <Sparkles className="h-3 w-3" />
-                      <span>{isGeneratingThumbs ? '處理中' : '排入佇列'}</span>
+                      <span>{isGeneratingThumbs ? '處理中' : '生成'}</span>
                     </Button>
                   </div>
 
@@ -813,23 +813,23 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     <div className="space-y-1">
                       <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
                         <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>清空衍生快取目錄 (/storage/cache)</span>
+                        <span>清空快取</span>
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        清空生成的縮圖與串流快取，釋放磁碟空間，原檔不受影響
-                        {stats ? ` (目前佔用: ${formatBytes(stats.storage.cacheBytes)})` : ''}
+                        清空縮圖與串流快取，原檔不受影響
+                        {stats ? ` (佔用: ${formatBytes(stats.storage.cacheBytes)})` : ''}
                       </div>
                     </div>
 
                     <Button
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
                       disabled={isClearingCache}
-                      className="h-7 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10 gap-1.5 shrink-0"
+                      className="h-7 text-xs gap-1.5 shrink-0"
                       onClick={handleClearCache}
                     >
                       <Trash2 className="h-3 w-3" />
-                      <span>{isClearingCache ? '清空中' : '清空快取'}</span>
+                      <span>{isClearingCache ? '清空中' : '清空'}</span>
                     </Button>
                   </div>
 
@@ -838,10 +838,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     <div className="space-y-1">
                       <div className="text-xs font-medium text-foreground flex items-center gap-1.5">
                         <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>清理未關聯標籤 (Prune Orphan Tags)</span>
+                        <span>清理標籤</span>
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        移除未被任何檔案或合集引用的孤兒標籤，精簡標籤索引
+                        移除未被任何檔案或合集引用的標籤
                       </div>
                     </div>
 
@@ -853,7 +853,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                       onClick={handlePruneTags}
                     >
                       <Wrench className="h-3 w-3" />
-                      <span>{isPruningTags ? '清理中' : '清理標籤'}</span>
+                      <span>{isPruningTags ? '清理中' : '清理'}</span>
                     </Button>
                   </div>
                 </div>
@@ -861,16 +861,16 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* TAB 4: 系統指標                                               */}
+            {/* TAB 5: 系統指標                                               */}
             {/* ------------------------------------------------------------- */}
             {activeTab === 'system' && (
               <div className="space-y-6">
                 <div>
                   <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                    伺服器客觀指標
+                    系統指標
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    即時後端運行數據，無主觀修飾
+                    即時運行數據
                   </p>
                 </div>
 
@@ -881,25 +881,25 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     {/* Media Stats Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                       <div className="p-3 bg-card border border-border rounded-sm">
-                        <span className="text-muted-foreground block text-[10px]">媒體總數</span>
+                        <span className="text-muted-foreground block text-[10px]">媒體</span>
                         <span className="text-lg font-bold text-foreground font-mono mt-0.5 block">
                           {stats.media.total}
                         </span>
                       </div>
                       <div className="p-3 bg-card border border-border rounded-sm">
-                        <span className="text-muted-foreground block text-[10px]">圖片總數</span>
+                        <span className="text-muted-foreground block text-[10px]">圖片</span>
                         <span className="text-lg font-bold text-foreground font-mono mt-0.5 block">
                           {stats.media.images}
                         </span>
                       </div>
                       <div className="p-3 bg-card border border-border rounded-sm">
-                        <span className="text-muted-foreground block text-[10px]">影片總數</span>
+                        <span className="text-muted-foreground block text-[10px]">影片</span>
                         <span className="text-lg font-bold text-foreground font-mono mt-0.5 block">
                           {stats.media.videos}
                         </span>
                       </div>
                       <div className="p-3 bg-card border border-border rounded-sm">
-                        <span className="text-muted-foreground block text-[10px]">標籤總數</span>
+                        <span className="text-muted-foreground block text-[10px]">標籤</span>
                         <span className="text-lg font-bold text-foreground font-mono mt-0.5 block">
                           {stats.tags.total}
                         </span>
@@ -908,22 +908,22 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
                     {/* Storage Stats Breakdown */}
                     <div className="p-4 rounded-sm border border-border bg-card space-y-3">
-                      <div className="text-xs font-medium text-foreground">磁碟佔用客觀拆解</div>
+                      <div className="text-xs font-medium text-foreground">磁碟佔用</div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                         <div>
-                          <span className="text-[10px] text-muted-foreground block">原始媒體 (/storage/originals)</span>
+                          <span className="text-[10px] text-muted-foreground block">原始媒體</span>
                           <span className="text-sm font-semibold text-foreground font-mono mt-0.5 block">
                             {formatBytes(stats.storage.originalsBytes)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-muted-foreground block">衍生快取 (/storage/cache)</span>
+                          <span className="text-[10px] text-muted-foreground block">快取</span>
                           <span className="text-sm font-semibold text-foreground font-mono mt-0.5 block">
                             {formatBytes(stats.storage.cacheBytes)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-muted-foreground block">總計空間消耗</span>
+                          <span className="text-[10px] text-muted-foreground block">總計</span>
                           <span className="text-sm font-semibold text-foreground font-mono mt-0.5 block">
                             {formatBytes(stats.storage.totalBytes)}
                           </span>
@@ -932,7 +932,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     </div>
 
                     {/* Runtime Environment Info */}
-                    <div className="p-4 rounded-sm border border-border bg-card divide-y divide-border/40 text-xs">
+                    <div className="p-4 rounded-sm border border-border bg-card divide-y divide-border text-xs">
                       <div className="flex items-center justify-between py-2">
                         <span className="text-muted-foreground">架構模式</span>
                         <span className="text-foreground font-mono">Local-First Decoupled Monolith</span>
@@ -955,7 +955,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-8 text-center text-xs text-muted-foreground">無法獲取統計資訊</div>
+                  <div className="p-8 text-center text-xs text-muted-foreground">無統計數據</div>
                 )}
               </div>
             )}

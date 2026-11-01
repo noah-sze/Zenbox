@@ -80,9 +80,9 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
             <Folder className="h-4 w-4 text-foreground" />
-            <h2 className="text-sm font-bold text-foreground tracking-wide">各庫文件夾詳細總覽</h2>
+            <h2 className="text-sm font-bold text-foreground tracking-wide">文件夾總覽</h2>
             <Badge variant="secondary" className="text-[10px] py-0 px-1.5 border-border">
-              {filteredDirs.length} 個目錄
+              {filteredDirs.length}
             </Badge>
           </div>
           <div className="flex items-center space-x-2">
@@ -106,15 +106,15 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
         </div>
 
         {/* Toolbar: Library Filter & Search */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-5 py-2.5 border-b border-border bg-muted/40 text-xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-5 py-2.5 border-b border-border bg-secondary text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground shrink-0 text-[11px] uppercase">篩選來源:</span>
+            <span className="text-muted-foreground shrink-0 text-[11px] uppercase">庫:</span>
             <select
               value={filterLibId ?? ''}
               onChange={(e) => setFilterLibId(e.target.value === '' ? null : Number(e.target.value))}
-              className="bg-card border border-border text-neutral-200 text-xs rounded-sm px-2 py-1 focus:outline-none focus:border-neutral-500 cursor-pointer"
+              className="bg-card border border-border text-foreground text-xs rounded-sm px-2 py-1 focus:outline-none focus:border-foreground cursor-pointer"
             >
-              <option value="">全部儲存庫 ({libraries.length})</option>
+              <option value="">全部 ({libraries.length})</option>
               {libraries.map((lib) => (
                 <option key={lib.id} value={lib.id}>
                   {lib.name}
@@ -126,18 +126,18 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
           <div className="flex items-center gap-2">
             <input
               type="text"
-              placeholder="搜尋文件夾名稱或路徑..."
+              placeholder="搜尋文件夾..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-card border border-border text-neutral-200 text-xs rounded-sm px-2.5 py-1 w-full sm:w-60 focus:outline-none focus:border-neutral-500"
+              className="bg-card border border-border text-foreground text-xs rounded-sm px-2.5 py-1 w-full sm:w-60 focus:outline-none focus:border-foreground"
             />
             <button
               type="button"
               onClick={() => onOpenCreate(filterLibId || undefined)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-sm bg-white text-black font-bold hover:bg-neutral-200 transition-none shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-sm bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity shrink-0"
             >
               <FolderPlus className="h-3.5 w-3.5" />
-              <span>新建</span>
+              <span>新增</span>
             </button>
           </div>
         </div>
@@ -162,13 +162,13 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                     <th className="py-2 px-3 text-right">操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
+                <tbody className="divide-y divide-border">
                   {filteredDirs.map((dir) => {
                     const isRoot = dir.directory === '';
                     return (
                       <tr
                         key={`${dir.libraryId}-${dir.directory}`}
-                        className="hover:bg-accent/40 transition-none group"
+                        className="hover:bg-accent transition-none group"
                       >
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                         </td>
 
                         <td className="py-2.5 px-3 text-right text-muted-foreground font-mono text-[11px]">
-                          {dir.imageCount} 圖 / {dir.videoCount} 片
+                          {dir.imageCount} 圖 · {dir.videoCount} 片
                         </td>
 
                         <td className="py-2.5 px-3 text-right text-muted-foreground font-mono">

@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenbox · 預覽 Dialog 設計圖 (雙軸導航與二級詳情)</title>
+  <!-- Google Fonts: JetBrains Mono & Noto Serif TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#000000',
+            foreground: '#ededed',
+            card: '#0a0a0a',
+            border: '#262626',
+            secondary: '#171717',
+            muted: '#8e8e8e',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            serif: ['"Noto Serif TC"', 'ui-serif', 'serif'],
+          },
+          boxShadow: {
+            none: 'none',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #000000;
+      color: #ededed;
+      font-family: 'JetBrains Mono', monospace;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #404040;
+    }
+    .bg-overlay {
+      background-color: rgba(0, 0, 0, 0.78);
+    }
+    /* Indicator Pill */
+    .axis-pill {
+      background: rgba(10, 10, 10, 0.85);
+      border: 1px solid #262626;
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-black text-foreground antialiased selection:bg-white selection:text-black">
+
+  <!-- ============================================================== -->
+  <!-- TOP CONTROL HEADER (FOR PROTOTYPE DEMO & INSTRUCTIONS)         -->
+  <!-- ============================================================== -->
+  <header class="fixed top-0 left-0 right-0 z-50 h-10 border-b border-[#262626] bg-[#0a0a0a]/95 backdrop-blur-sm flex items-center justify-between px-3 text-xs select-none">
+    <!-- Left: Status & Specs -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-1.5 font-bold tracking-tight">
+        <span class="w-2 h-2 rounded-full bg-white"></span>
+        <span class="text-white">Zenbox</span>
+        <span class="text-muted text-[11px]">/ 預覽 Dialog · 雙軸導航與二級視窗</span>
+      </div>
+
+      <div class="h-3 w-px bg-[#262626]"></div>
+
+      <div class="hidden sm:flex items-center space-x-2 text-[11px] text-neutral-400">
+        <span class="text-white font-semibold">雙軸導航規則：</span>
+        <span class="px-1.5 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-neutral-200">↕ 上下滑動：切換資產</span>
+        <span class="px-1.5 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-neutral-200">↔ 左右滑動：查看同群組文件</span>
+      </div>
+    </div>
+
+    <!-- Right: Hotkey & Trigger -->
+    <div class="flex items-center space-x-2 text-[11px]">
+      <button
+        onclick="toggleDialog()"
+        id="btn-dialog-toggle"
+        class="px-2.5 py-0.5 rounded-sm border border-[#333] bg-[#171717] text-neutral-200 hover:text-white hover:border-white transition-none"
+      >
+        開啟預覽 Dialog
+      </button>
+      <div class="text-muted hidden md:flex items-center space-x-1.5 pl-2 border-l border-[#262626]">
+        <kbd class="px-1 py-0.2 rounded-sm border border-[#333] bg-[#171717] text-[10px]">↑/↓</kbd>
+        <span class="text-[10px]">資產</span>
+        <kbd class="px-1 py-0.2 rounded-sm border border-[#333] bg-[#171717] text-[10px]">←/→</kbd>
+        <span class="text-[10px]">同群組</span>
+        <kbd class="px-1 py-0.2 rounded-sm border border-[#333] bg-[#171717] text-[10px]">I</kbd>
+        <span class="text-[10px]">二級詳情</span>
+        <kbd class="px-1 py-0.2 rounded-sm border border-[#333] bg-[#171717] text-[10px]">Esc</kbd>
+        <span class="text-[10px]">關閉</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================== -->
+  <!-- BACKGROUND GALLERY GRID (Context: non-fullscreen environment)  -->
+  <!-- ============================================================== -->
+  <div class="pt-10 w-full h-full flex overflow-hidden">
+    <!-- Mock Sidebar -->
+    <aside class="w-56 border-r border-[#262626] bg-[#000000] p-3 text-xs space-y-4 hidden md:block">
+      <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">儲存庫</div>
+      <div class="space-y-1">
+        <div class="px-2 py-1 rounded-sm bg-[#171717] text-white">Default Library (48)</div>
+        <div class="px-2 py-1 text-neutral-400">Design Assets (120)</div>
+      </div>
+      <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider pt-2 border-t border-[#262626]">類型</div>
+      <div class="space-y-1 text-neutral-400">
+        <div class="px-2 py-0.5">圖片 (82)</div>
+        <div class="px-2 py-0.5">影片 (14)</div>
+        <div class="px-2 py-0.5">書籤 (28)</div>
+      </div>
+    </aside>
+
+    <!-- Mock Gallery Content -->
+    <main class="flex-1 bg-[#050505] p-6 overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-[#262626] mb-5">
+        <div class="text-sm font-bold text-white">所有媒體資產</div>
+        <div class="text-xs text-neutral-500">共 4 組資產 (包含群組多圖與關聯文件)</div>
+      </div>
+
+      <!-- Mock Cards Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <!-- Card 1 (Group: 3 items) -->
+        <div onclick="openAsset(0, 0)" class="cursor-pointer border border-[#262626] bg-[#0a0a0a] rounded-sm overflow-hidden hover:border-neutral-400 transition-colors">
+          <div class="aspect-square bg-neutral-900 relative">
+            <img src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/80 border border-neutral-700 text-[10px] text-white font-mono">
+              3 件同群組
+            </span>
+          </div>
+          <div class="p-2.5">
+            <div class="text-xs font-semibold text-white truncate">沙丘與沙漠探險系列</div>
+            <div class="text-[11px] text-neutral-500 font-mono">GROUP · 3 ITEMS</div>
+          </div>
+        </div>
+
+        <!-- Card 2 (Single Video) -->
+        <div onclick="openAsset(1, 0)" class="cursor-pointer border border-[#262626] bg-[#0a0a0a] rounded-sm overflow-hidden hover:border-neutral-400 transition-colors">
+          <div class="aspect-square bg-neutral-900 relative flex items-center justify-center">
+            <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover opacity-70">
+            <span class="absolute px-2 py-0.5 rounded-sm bg-black/80 border border-neutral-700 text-[10px] text-white font-mono">
+              ▶ 00:45
+            </span>
+          </div>
+          <div class="p-2.5">
+            <div class="text-xs font-semibold text-white truncate">極光延時攝影片段</div>
+            <div class="text-[11px] text-neutral-500 font-mono">MP4 · 42.8 MB</div>
+          </div>
+        </div>
+
+        <!-- Card 3 (Group: 2 bookmarks) -->
+        <div onclick="openAsset(2, 0)" class="cursor-pointer border border-[#262626] bg-[#0a0a0a] rounded-sm overflow-hidden hover:border-neutral-400 transition-colors">
+          <div class="aspect-square bg-neutral-900 relative flex items-center justify-center p-4">
+            <div class="w-12 h-12 rounded-sm border border-neutral-700 bg-black flex items-center justify-center text-white text-lg">🌐</div>
+            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/80 border border-neutral-700 text-[10px] text-white font-mono">
+              2 件書籤組
+            </span>
+          </div>
+          <div class="p-2.5">
+            <div class="text-xs font-semibold text-white truncate">Next.js 架構研究書籤</div>
+            <div class="text-[11px] text-neutral-500 font-mono">URL · nextjs.org</div>
+          </div>
+        </div>
+
+        <!-- Card 4 (Group: 2 docs) -->
+        <div onclick="openAsset(3, 0)" class="cursor-pointer border border-[#262626] bg-[#0a0a0a] rounded-sm overflow-hidden hover:border-neutral-400 transition-colors">
+          <div class="aspect-square bg-neutral-900 relative flex items-center justify-center p-4">
+            <div class="w-12 h-12 rounded-sm border border-neutral-700 bg-black flex items-center justify-center text-white text-lg">📄</div>
+            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/80 border border-neutral-700 text-[10px] text-white font-mono">
+              2 份關聯文檔
+            </span>
+          </div>
+          <div class="p-2.5">
+            <div class="text-xs font-semibold text-white truncate">Zen 設計白皮書規範</div>
+            <div class="text-[11px] text-neutral-500 font-mono">MD · 34.2 KB</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL DIALOG BACKDROP & FLOATING DIALOG CONTAINER              -->
+  <!-- ============================================================== -->
+  <div
+    id="preview-dialog-backdrop"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-overlay backdrop-blur-[2px]"
+    onclick="handleBackdropClick(event)"
+  >
+    <!-- DIALOG BOX: Not Fullscreen, Centered Floating Modal with max-w-[650px] -->
+    <div
+      id="dialog-container"
+      class="relative z-50 flex flex-col w-full max-w-[650px] h-[85vh] max-h-[860px] bg-[#f4f4f5] dark:bg-black border border-[#e4e4e7] dark:border-[#262626] rounded-sm overflow-hidden shadow-none font-mono text-foreground"
+      onclick="event.stopPropagation()"
+    >
+      
+      <!-- ============================================================ -->
+      <!-- MAIN IMMERSIVE STAGE (Fills Remaining Space in Dialog)       -->
+      <!-- ============================================================ -->
+      <div id="dialog-main-stage" class="relative flex-1 flex flex-col bg-[#f4f4f5] dark:bg-black overflow-hidden h-full">
+
+        <!-- 1. FLOATING TOPBAR IN DIALOG -->
+        <div class="absolute top-0 left-0 right-0 z-30 h-12 px-3 md:px-4 flex items-center justify-between pointer-events-none bg-gradient-to-b from-[#f4f4f5]/90 via-[#f4f4f5]/50 to-transparent dark:from-black/85 dark:via-black/40 dark:to-transparent">
+          
+          <!-- Left: Group Navigator (if group > 1) -->
+          <div class="pointer-events-auto flex items-center space-x-2 text-xs">
+            <!-- Horizontal Group Index (↔ 左右切換同群組文件) -->
+            <div id="dlg-group-pill" class="flex items-center space-x-1 px-2 py-0.5 rounded-sm axis-pill text-neutral-300 text-[11px]" title="左右滑動切換同群組文件 (← / →)">
+              <button onclick="navigateGroup(-1)" id="btn-group-prev" class="p-0.5 rounded-sm hover:text-white text-neutral-400 transition-none" title="群組上一件 (←)">
+                ◀
+              </button>
+              <span class="font-mono text-neutral-400">群組</span>
+              <span id="dlg-group-indicator" class="font-bold text-white">1 / 3</span>
+              <button onclick="navigateGroup(1)" id="btn-group-next" class="p-0.5 rounded-sm hover:text-white text-neutral-400 transition-none" title="群組下一件 (→)">
+                ▶
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Actions (Zoom, Drawer Toggle, Edit, Close) -->
+          <div class="pointer-events-auto flex items-center space-x-1.5 text-xs ml-auto">
+            <!-- Zoom Toggle -->
+            <button
+              id="dlg-btn-zoom"
+              onclick="toggleZoom()"
+              class="flex items-center space-x-1 h-7 px-2.5 rounded-sm border border-[#262626] bg-[#0a0a0a]/80 text-[11px] text-neutral-300 hover:text-white hover:border-neutral-500 transition-none"
+              title="縮放 (Z)"
+            >
+              <span id="dlg-zoom-label">適配</span>
+              <span class="text-[10px] opacity-60 ml-0.5">[Z]</span>
+            </button>
+
+            <!-- Secondary Inspector Drawer Toggle -->
+            <button
+              id="dlg-btn-drawer"
+              onclick="toggleDrawer()"
+              class="flex items-center space-x-1 h-7 px-2.5 rounded-sm border border-[#262626] bg-[#0a0a0a]/80 text-[11px] text-neutral-300 hover:text-white hover:border-neutral-500 transition-none"
+              title="二級詳情 (I)"
+            >
+              <span>詳情</span>
+              <span class="text-[10px] opacity-60 ml-0.5">[I]</span>
+            </button>
+
+            <!-- Edit Button -->
+            <button
+              onclick="openEditMode()"
+              class="flex items-center space-x-1 h-7 px-2.5 rounded-sm border border-[#262626] bg-[#0a0a0a]/80 text-[11px] text-neutral-300 hover:text-white hover:border-neutral-500 transition-none"
+              title="編輯 (E)"
+            >
+              <span>編輯</span>
+              <span class="text-[10px] opacity-60 ml-0.5">[E]</span>
+            </button>
+
+            <!-- Close Dialog Button -->
+            <button
+              onclick="closeDialog()"
+              class="h-7 w-7 rounded-sm border border-[#262626] bg-[#0a0a0a]/80 text-neutral-400 hover:text-white hover:border-neutral-500 flex items-center justify-center transition-none ml-1"
+              title="關閉視窗 (Esc)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. STAGE MEDIA CONTENT (Interactive Zoom / Presentation) -->
+        <div
+          id="dialog-media-container"
+          class="flex-1 flex items-center justify-center p-4 md:p-6 select-none overflow-hidden"
+          onwheel="handleStageWheel(event)"
+          onclick="handleMediaClick()"
+        >
+          <!-- Dynamic Content rendered by JS -->
+          <div id="dialog-media-body" class="w-full h-full flex items-center justify-center"></div>
+        </div>
+
+        <!-- 3. HORIZONTAL GROUP NAVIGATION ARROWS -->
+        <!-- Horizontal: Group Left (◀) -->
+        <button
+          id="arrow-group-left"
+          onclick="navigateGroup(-1)"
+          class="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-12 w-9 rounded-sm axis-pill text-neutral-400 hover:text-white flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+          title="向左切換同群組文件 (←)"
+        >
+          ◀
+        </button>
+
+        <!-- Horizontal: Group Right (▶) -->
+        <button
+          id="arrow-group-right"
+          onclick="navigateGroup(1)"
+          class="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-12 w-9 rounded-sm axis-pill text-neutral-400 hover:text-white flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+          title="向右切換同群組文件 (→)"
+        >
+          ▶
+        </button>
+
+        <!-- 4. BOTTOM FLOATING GROUP DOTS (Only if group count > 1) -->
+        <div class="absolute bottom-3 left-0 right-0 z-20 flex justify-center pointer-events-none">
+          <div id="dlg-group-dots" class="pointer-events-auto flex items-center space-x-1.5 px-2.5 py-1 rounded-sm axis-pill">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECONDARY INSPECTOR DRAWER (Collapsible 380px Side Panel)    -->
+      <!-- ============================================================ -->
+      <aside
+        id="dialog-inspector"
+        class="hidden absolute inset-y-0 right-0 w-full sm:w-[380px] max-w-full h-full flex flex-col justify-between bg-[#0a0a0a] border-l border-[#262626] z-40 font-mono shadow-none"
+      >
+        <!-- Inspector Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[#262626] bg-[#0a0a0a] shrink-0">
+          <div class="flex items-center space-x-2">
+            <span id="inspector-title" class="text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+              資產詳情
+            </span>
+            <span class="px-1 py-0.2 rounded-sm border border-[#262626] text-[10px] text-neutral-500 font-mono">
+              二級視窗
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-1.5">
+            <button
+              id="btn-inspector-edit"
+              onclick="toggleEditMode()"
+              class="h-7 px-2.5 rounded-sm border border-[#262626] bg-[#171717] text-xs text-neutral-300 hover:text-white transition-none"
+            >
+              編輯
+            </button>
+            <button
+              onclick="toggleDrawer()"
+              class="text-neutral-400 hover:text-white p-1 rounded-sm transition-none ml-1 text-sm"
+              title="收合二級視窗 (I)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Inspector Scrollable Body -->
+        <div id="inspector-body" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+          <!-- Dynamic Content rendered by JS (View Mode vs Edit Mode) -->
+        </div>
+
+        <!-- Inspector Footer Actions -->
+        <div id="inspector-footer" class="px-4 py-3 border-t border-[#262626] bg-[#0a0a0a] shrink-0">
+          <div class="space-y-1.5">
+            <button class="w-full py-1.5 rounded-sm border border-[#262626] text-xs text-neutral-300 hover:text-white hover:border-neutral-500 bg-[#0a0a0a] transition-none">
+              開新分頁檢視原檔
+            </button>
+            <button class="w-full py-1.5 rounded-sm border border-[#262626] text-xs text-neutral-400 hover:text-white bg-[#171717] transition-none">
+              下載檔案
+            </button>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- CLIENT LOGIC: Dual-Axis Navigation, Groups, Drawer, Hotkeys    -->
+  <!-- ============================================================== -->
+  <script>
+    // Mock Data Matrix: 4 Assets, each may have multiple files in its group
+    const mockData = [
+      {
+        id: 1,
+        title: "沙漠沙丘探險專題",
+        type: "GROUP",
+        groupName: "沙丘與駱駝攝影組",
+        files: [
+          {
+            filename: "mehdi-el-marouazi-k1LDyXvk3HA-unsplash.jpg",
+            title: "沙漠駱駝正面特寫",
+            ext: "JPG",
+            width: 5464,
+            height: 6830,
+            size: "3.7 MB",
+            addedAt: "2026-10-31",
+            library: "Default Library",
+            directory: "/travel/desert",
+            tags: ["desert", "camels", "travel", "nature"],
+            notes: "於撒哈拉沙漠邊緣拍攝的高對比度野生駱駝特寫。色溫偏暖，顆粒感細膩。",
+            url: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1600&q=80"
+          },
+          {
+            filename: "desert-dune-shadows-sunset.jpg",
+            title: "日落沙丘光影延展",
+            ext: "JPG",
+            width: 6000,
+            height: 4000,
+            size: "4.8 MB",
+            addedAt: "2026-10-31",
+            library: "Default Library",
+            directory: "/travel/desert",
+            tags: ["desert", "dune", "sunset", "shadows"],
+            notes: "日落側逆光角度呈現沙脊線條與銳利光影邊緣。",
+            url: "https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?auto=format&fit=crop&w=1600&q=80"
+          },
+          {
+            filename: "nomad-camp-night-stars.jpg",
+            title: "沙漠營地星空全景",
+            ext: "JPG",
+            width: 5120,
+            height: 2880,
+            size: "5.2 MB",
+            addedAt: "2026-10-31",
+            library: "Default Library",
+            directory: "/travel/desert",
+            tags: ["desert", "stars", "night", "camp"],
+            notes: "銀河拱橋長曝光攝影，沙漠環境無光害干擾。",
+            url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80"
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: "極光延時攝影片段",
+        type: "VIDEO",
+        groupName: "單一影片",
+        files: [
+          {
+            filename: "aurora-borealis-tromso-4k.mp4",
+            title: "挪威特羅姆瑟 4K 極光流動",
+            ext: "MP4",
+            width: 3840,
+            height: 2160,
+            duration: "00:45",
+            size: "42.8 MB",
+            addedAt: "2026-10-30",
+            library: "Design Assets",
+            directory: "/video/nature",
+            tags: ["aurora", "norway", "timelapse", "4k"],
+            notes: "使用無反相機以 1 秒間隔連拍合成的 4K 60fps 延時影片，色彩無過度後製。",
+            url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1600&q=80",
+            isVideo: true
+          }
+        ]
+      },
+      {
+        id: 3,
+        title: "前端技術架構研究書籤",
+        type: "BOOKMARK_GROUP",
+        groupName: "Next.js 官方研究資源組",
+        files: [
+          {
+            filename: "nextjs-app-router-docs.url",
+            title: "Next.js App Router 官方架構文件",
+            ext: "URL",
+            domain: "nextjs.org",
+            size: "1.2 KB",
+            addedAt: "2026-11-01",
+            library: "Default Library",
+            directory: "/bookmarks/dev",
+            tags: ["nextjs", "react", "architecture", "docs"],
+            notes: "涵蓋 Server Components、Streaming SSR 及 Parallel Routes 核心設計規範。",
+            sourceUrl: "https://nextjs.org/docs/app",
+            isBookmark: true
+          },
+          {
+            filename: "nextjs-server-actions-guide.url",
+            title: "Next.js Server Actions 突變最佳實踐",
+            ext: "URL",
+            domain: "nextjs.org",
+            size: "1.1 KB",
+            addedAt: "2026-11-01",
+            library: "Default Library",
+            directory: "/bookmarks/dev",
+            tags: ["nextjs", "server-actions", "backend"],
+            notes: "樂觀更新（Optimistic UI）與表單安全處理深度指引。",
+            sourceUrl: "https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations",
+            isBookmark: true
+          }
+        ]
+      },
+      {
+        id: 4,
+        title: "Zenbox 系統架構規格白皮書",
+        type: "DOC_GROUP",
+        groupName: "Zen 規範文檔組",
+        files: [
+          {
+            filename: "ARCHITECTURE.md",
+            title: "Zenbox Decoupled Monolith 架構規範",
+            ext: "MD",
+            size: "24.5 KB",
+            addedAt: "2026-10-28",
+            library: "Default Library",
+            directory: "/docs/specs",
+            tags: ["architecture", "spec", "sqlite", "sidecar"],
+            notes: "確立原生檔案系統為唯一真理源，SQLite 作為可拋棄快取索引的核心規則。",
+            isDoc: true
+          },
+          {
+            filename: "DESIGN_STANDARDS.md",
+            title: "Zenbox 極簡工程美學設計規範",
+            ext: "MD",
+            size: "9.7 KB",
+            addedAt: "2026-10-28",
+            library: "Default Library",
+            directory: "/docs/specs",
+            tags: ["design", "ui", "minimalism", "guidelines"],
+            notes: "純黑背景、1px 微邊框、扁平無陰影、JetBrains Mono 等寬字體契約。",
+            isDoc: true
+          }
+        ]
+      }
+    ];
+
+    // Current Navigation State
+    let currentAssetIndex = 0; // Vertical Axis (0 ~ mockData.length - 1)
+    let currentGroupIndex = 0; // Horizontal Axis (0 ~ mockData[asset].files.length - 1)
+    let isDrawerOpen = false;   // Secondary Inspector Drawer (closed by default)
+    let zoomMode = 'fit';      // 'fit' or 'actual'
+    let isEditing = false;
+    let wheelDebounceTimer = null;
+
+    // Initialize Dialog
+    function init() {
+      renderStage();
+    }
+
+    // Toggle Dialog Open/Close
+    function toggleDialog() {
+      const backdrop = document.getElementById('preview-dialog-backdrop');
+      if (backdrop.style.display === 'none') {
+        openAsset(0, 0);
+      } else {
+        closeDialog();
+      }
+    }
+
+    function openAsset(assetIdx, groupIdx = 0) {
+      currentAssetIndex = Math.max(0, Math.min(assetIdx, mockData.length - 1));
+      const asset = mockData[currentAssetIndex];
+      currentGroupIndex = Math.max(0, Math.min(groupIdx, asset.files.length - 1));
+      zoomMode = 'fit';
+      isEditing = false;
+
+      const backdrop = document.getElementById('preview-dialog-backdrop');
+      backdrop.style.display = 'flex';
+      renderStage();
+    }
+
+    function closeDialog() {
+      const backdrop = document.getElementById('preview-dialog-backdrop');
+      backdrop.style.display = 'none';
+      if (isDrawerOpen) {
+        toggleDrawer(false);
+      }
+    }
+
+    function handleBackdropClick(e) {
+      if (e.target.id === 'preview-dialog-backdrop') {
+        closeDialog();
+      }
+    }
+
+    // ================================================================
+    // DUAL-AXIS NAVIGATION
+    // ================================================================
+
+    // Vertical Navigation: Assets (↕)
+    function navigateAsset(delta) {
+      const newIdx = currentAssetIndex + delta;
+      if (newIdx >= 0 && newIdx < mockData.length) {
+        currentAssetIndex = newIdx;
+        currentGroupIndex = 0; // Reset group index to first item when switching asset
+        zoomMode = 'fit';
+        isEditing = false;
+        renderStage();
+      }
+    }
+
+    // Horizontal Navigation: Group Files (↔)
+    function navigateGroup(delta) {
+      const asset = mockData[currentAssetIndex];
+      const newIdx = currentGroupIndex + delta;
+      if (newIdx >= 0 && newIdx < asset.files.length) {
+        currentGroupIndex = newIdx;
+        zoomMode = 'fit';
+        isEditing = false;
+        renderStage();
+      }
+    }
+
+    // Mouse Wheel Navigation (Vertical = Asset, Horizontal = Group)
+    function handleStageWheel(e) {
+      if (zoomMode === 'actual') return; // Don't intercept when panning 1:1
+
+      e.preventDefault();
+      if (wheelDebounceTimer) return;
+
+      const deltaY = e.deltaY;
+      const deltaX = e.deltaX;
+
+      // Vertical Wheel -> Switch Asset
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 25) {
+        if (deltaY > 0) {
+          navigateAsset(1); // Down
+        } else {
+          navigateAsset(-1); // Up
+        }
+      }
+      // Horizontal Wheel -> Switch Group Item
+      else if (Math.abs(deltaX) > 25) {
+        if (deltaX > 0) {
+          navigateGroup(1); // Right
+        } else {
+          navigateGroup(-1); // Left
+        }
+      }
+
+      wheelDebounceTimer = setTimeout(() => {
+        wheelDebounceTimer = null;
+      }, 260); // Debounce to prevent rapid skipping
+    }
+
+    // ================================================================
+    // STAGE RENDERING
+    // ================================================================
+    function renderStage() {
+      const asset = mockData[currentAssetIndex];
+      const file = asset.files[currentGroupIndex];
+
+      // Dynamic Dialog Max-Width according to aspect ratio to eliminate side letterboxing
+      const dlgContainer = document.getElementById('dialog-container');
+      if (dlgContainer) {
+        dlgContainer.classList.remove('max-w-[650px]', 'max-w-[500px]', 'max-w-[880px]', 'max-w-[600px]', 'max-w-[560px]');
+        if (file.isBookmark || file.isDoc) {
+          dlgContainer.classList.add('max-w-[560px]');
+        } else if (file.isVideo) {
+          dlgContainer.classList.add('max-w-[880px]');
+        } else if (file.width && file.height) {
+          const ratio = file.width / file.height;
+          if (ratio >= 1.2) {
+            dlgContainer.classList.add('max-w-[880px]');
+          } else if (ratio <= 0.85) {
+            dlgContainer.classList.add('max-w-[500px]');
+          } else {
+            dlgContainer.classList.add('max-w-[600px]');
+          }
+        } else {
+          dlgContainer.classList.add('max-w-[650px]');
+        }
+      }
+
+      // 1. Update Indicators in Topbar
+      const hasGroup = asset.files.length > 1;
+      const groupPill = document.getElementById('dlg-group-pill');
+      if (hasGroup) {
+        groupPill.classList.remove('opacity-30', 'pointer-events-none');
+        document.getElementById('dlg-group-indicator').innerText = 
+          `${currentGroupIndex + 1} / ${asset.files.length}`;
+        document.getElementById('btn-group-prev').disabled = currentGroupIndex === 0;
+        document.getElementById('btn-group-next').disabled = currentGroupIndex === asset.files.length - 1;
+        document.getElementById('arrow-group-left').style.display = 'flex';
+        document.getElementById('arrow-group-right').style.display = 'flex';
+      } else {
+        groupPill.classList.add('opacity-30', 'pointer-events-none');
+        document.getElementById('dlg-group-indicator').innerText = '單一檔案';
+        document.getElementById('arrow-group-left').style.display = 'none';
+        document.getElementById('arrow-group-right').style.display = 'none';
+      }
+
+      // 2. Spec Capsule (Removed from top)
+
+      // 3. Zoom Button availability
+      const zoomBtn = document.getElementById('dlg-btn-zoom');
+      if (file.url && !file.isVideo) {
+        zoomBtn.style.display = 'flex';
+        document.getElementById('dlg-zoom-label').innerText = zoomMode === 'actual' ? '1:1' : '適配';
+      } else {
+        zoomBtn.style.display = 'none';
+      }
+
+      // 4. Render Media Body
+      const body = document.getElementById('dialog-media-body');
+      body.innerHTML = '';
+
+      if (file.isVideo) {
+        body.innerHTML = `
+          <div class="relative w-full max-w-4xl max-h-[75vh] flex flex-col items-center justify-center bg-black border border-[#262626] rounded-sm overflow-hidden p-2">
+            <img src="${file.url}" class="max-h-[65vh] w-auto object-contain">
+            <div class="absolute inset-0 flex items-center justify-center bg-black/40">
+              <div class="w-16 h-16 rounded-full bg-white/20 border border-white flex items-center justify-center text-white text-xl pl-1 backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform">
+                ▶
+              </div>
+            </div>
+            <div class="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs text-white">
+              <span>00:12 / ${file.duration}</span>
+              <span class="font-mono text-neutral-400">4K 60FPS · HLS PROXY</span>
+            </div>
+          </div>
+        `;
+      } else if (file.isBookmark) {
+        body.innerHTML = `
+          <div class="flex flex-col items-center justify-center p-8 max-w-md w-full bg-[#0a0a0a] border border-[#262626] rounded-sm text-center">
+            <div class="h-16 w-16 rounded-sm border border-[#262626] bg-black flex items-center justify-center text-3xl mb-4">
+              🌐
+            </div>
+            <span class="px-2 py-0.5 rounded-sm bg-[#171717] text-[11px] font-mono font-bold tracking-widest uppercase border border-[#262626] text-white mb-2">
+              URL 書籤
+            </span>
+            <h3 class="text-sm font-bold text-white break-all mb-1">${file.title}</h3>
+            <span class="text-xs text-neutral-400 font-mono mb-6">${file.domain}</span>
+            <div class="flex items-center gap-2">
+              <a href="${file.sourceUrl}" target="_blank" class="flex items-center space-x-1.5 h-8 px-4 rounded-sm border border-white bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-none">
+                <span>開啟網址</span> ↗
+              </a>
+              <button class="h-8 px-3 rounded-sm border border-[#262626] bg-[#0a0a0a] text-xs text-neutral-300 hover:text-white transition-none">
+                下載 .url
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (file.isDoc) {
+        body.innerHTML = `
+          <div class="w-full max-w-3xl h-[68vh] bg-[#0a0a0a] border border-[#262626] rounded-sm p-6 overflow-y-auto text-xs leading-relaxed font-mono">
+            <div class="flex items-center justify-between pb-3 border-b border-[#262626] mb-4">
+              <span class="font-bold text-white text-sm">${file.filename}</span>
+              <span class="text-neutral-500">${file.size} · MARKDOWN</span>
+            </div>
+            <div class="text-neutral-300 space-y-3 font-serif">
+              <p class="font-bold text-white text-base"># ${file.title}</p>
+              <p>原生檔案系統是唯一的宇宙事實來源（Single Source of Truth），脫離任何軟體也能被直接讀取與遷移。</p>
+              <p class="font-mono text-xs text-neutral-400 bg-black p-3 border border-[#262626] rounded-sm">
+                +-- /storage/originals/ (唯讀不可變)<br>
+                +-- /storage/cache/     (縮圖與 HLS 隨時可重建)<br>
+                +-- /storage/.zenbox/   (Sidecar 與 Collections)
+              </p>
+              <p>${file.notes}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        // Standard Image with Social Media Post Format Underneath
+        const imgClass = zoomMode === 'actual' 
+          ? 'max-w-none max-h-none w-auto h-auto cursor-zoom-out'
+          : 'w-full h-auto max-h-[72vh] object-contain cursor-zoom-in block';
+        body.innerHTML = `
+          <div class="flex flex-col w-full">
+            <div class="relative w-full flex items-center justify-center p-0 select-none bg-black/5 dark:bg-white/5 overflow-hidden">
+              <img src="${file.url}" alt="${file.title}" class="${imgClass}">
+            </div>
+            <!-- Social Media Post Section Underneath Media -->
+            <div class="px-5 py-4 border-t border-[#e4e4e7] dark:border-[#262626] bg-card/25 space-y-3 text-xs text-left">
+              <div>
+                <h3 class="font-bold text-foreground text-sm leading-tight">${file.title}</h3>
+                <span class="text-[11px] text-muted-foreground font-mono block mt-0.5">${file.filename}</span>
+              </div>
+              ${file.notes ? `<p class="font-serif text-foreground/90 leading-relaxed whitespace-pre-wrap">${file.notes}</p>` : ''}
+              ${file.tags && file.tags.length ? `
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                  ${file.tags.map(t => `<span class="px-2 py-0.5 rounded-sm border border-border bg-card text-[11px] text-foreground">#${t}</span>`).join('')}
+                </div>
+              ` : ''}
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-border/30 text-[11px] text-muted-foreground font-mono">
+                <span class="font-bold text-foreground uppercase tracking-wider">${file.ext}</span>
+                ${file.width ? `<span>${file.width} × ${file.height}</span>` : ''}
+                <span>${file.size}</span>
+                <span>${file.addedAt}</span>
+                <span>📁 ${file.directory}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 5. Render Group Thumbnails / Dots
+      const dotsContainer = document.getElementById('dlg-group-dots');
+      if (hasGroup) {
+        dotsContainer.style.display = 'flex';
+        dotsContainer.innerHTML = asset.files.map((f, idx) => `
+          <button
+            onclick="navigateGroup(${idx - currentGroupIndex})"
+            class="h-2 rounded-full transition-all ${
+              idx === currentGroupIndex ? 'w-6 bg-white' : 'w-2 bg-neutral-600 hover:bg-neutral-400'
+            }"
+            title="${f.title}"
+          ></button>
+        `).join('');
+      } else {
+        dotsContainer.style.display = 'none';
+      }
+
+      // 6. Update Inspector Content
+      renderInspector();
+    }
+
+    // ================================================================
+    // SECONDARY INSPECTOR DRAWER
+    // ================================================================
+    function toggleDrawer(forceState) {
+      if (typeof forceState === 'boolean') {
+        isDrawerOpen = forceState;
+      } else {
+        isDrawerOpen = !isDrawerOpen;
+      }
+
+      const inspector = document.getElementById('dialog-inspector');
+      const drawerBtn = document.getElementById('dlg-btn-drawer');
+
+      if (isDrawerOpen) {
+        inspector.classList.remove('hidden');
+        drawerBtn.classList.remove('bg-[#0a0a0a]/80', 'text-neutral-300');
+        drawerBtn.classList.add('bg-white', 'text-black', 'border-white', 'font-semibold');
+      } else {
+        inspector.classList.add('hidden');
+        drawerBtn.classList.remove('bg-white', 'text-black', 'border-white', 'font-semibold');
+        drawerBtn.classList.add('bg-[#0a0a0a]/80', 'text-neutral-300');
+        isEditing = false;
+      }
+    }
+
+    function toggleZoom() {
+      zoomMode = zoomMode === 'fit' ? 'actual' : 'fit';
+      const container = document.getElementById('dialog-media-container');
+      if (zoomMode === 'actual') {
+        container.classList.remove('overflow-hidden');
+        container.classList.add('overflow-auto');
+      } else {
+        container.classList.remove('overflow-auto');
+        container.classList.add('overflow-hidden');
+      }
+      renderStage();
+    }
+
+    function handleMediaClick() {
+      const asset = mockData[currentAssetIndex];
+      const file = asset.files[currentGroupIndex];
+      if (file.url && !file.isVideo && !file.isBookmark && !file.isDoc) {
+        toggleZoom();
+      }
+    }
+
+    function openEditMode() {
+      toggleDrawer(true);
+      isEditing = true;
+      renderInspector();
+    }
+
+    function toggleEditMode() {
+      isEditing = !isEditing;
+      renderInspector();
+    }
+
+    function renderInspector() {
+      const asset = mockData[currentAssetIndex];
+      const file = asset.files[currentGroupIndex];
+      const body = document.getElementById('inspector-body');
+      const title = document.getElementById('inspector-title');
+      const editBtn = document.getElementById('btn-inspector-edit');
+
+      if (isEditing) {
+        title.innerText = "編輯資產";
+        editBtn.innerText = "完成";
+        editBtn.classList.add('bg-white', 'text-black');
+
+        body.innerHTML = `
+          <div class="space-y-3">
+            <div>
+              <label class="text-[11px] text-neutral-400 block mb-1">標題</label>
+              <input type="text" value="${file.title}" class="w-full h-8 px-2 rounded-sm bg-black border border-[#262626] text-white text-xs">
+            </div>
+            <div>
+              <label class="text-[11px] text-neutral-400 block mb-1">檔名</label>
+              <input type="text" value="${file.filename}" class="w-full h-8 px-2 rounded-sm bg-black border border-[#262626] text-white text-xs font-mono">
+            </div>
+            <div>
+              <label class="text-[11px] text-neutral-400 block mb-1">標籤 (以逗號分隔)</label>
+              <input type="text" value="${(file.tags || []).join(', ')}" class="w-full h-8 px-2 rounded-sm bg-black border border-[#262626] text-white text-xs">
+            </div>
+            <div>
+              <label class="text-[11px] text-neutral-400 block mb-1">客觀備註</label>
+              <textarea rows="4" class="w-full p-2 rounded-sm bg-black border border-[#262626] text-white text-xs leading-relaxed font-serif">${file.notes || ''}</textarea>
+            </div>
+          </div>
+        `;
+      } else {
+        title.innerText = "資產詳情";
+        editBtn.innerText = "編輯";
+        editBtn.classList.remove('bg-white', 'text-black');
+
+        body.innerHTML = `
+          <div class="space-y-4">
+            <div>
+              <div class="text-sm font-bold text-white break-words">${file.title}</div>
+              <div class="text-[11px] text-neutral-500 font-mono break-all mt-0.5">${file.filename}</div>
+            </div>
+
+            <!-- Group Info Pill -->
+            <div class="p-2 rounded-sm bg-[#171717] border border-[#262626] text-xs">
+              <div class="text-[10px] text-neutral-500 uppercase font-bold">所屬群組 / 合集</div>
+              <div class="text-white font-semibold mt-0.5">${asset.groupName}</div>
+              <div class="text-[11px] text-neutral-400 font-mono mt-0.5">此群組共包含 ${asset.files.length} 件文件</div>
+            </div>
+
+            <!-- Spec Metrics -->
+            <div class="space-y-2 pt-2 border-t border-[#262626] text-xs">
+              ${file.width ? `
+                <div class="flex justify-between">
+                  <span class="text-neutral-500">解析度</span>
+                  <span class="text-neutral-200">${file.width} × ${file.height}</span>
+                </div>
+              ` : ''}
+              <div class="flex justify-between">
+                <span class="text-neutral-500">檔案大小</span>
+                <span class="text-neutral-200">${file.size}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-neutral-500">加入時間</span>
+                <span class="text-neutral-200">${file.addedAt}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-neutral-500">儲存庫</span>
+                <span class="text-neutral-200">${file.library}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-neutral-500">資料夾</span>
+                <span class="text-neutral-200 font-mono">${file.directory}</span>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="pt-2 border-t border-[#262626]">
+              <div class="text-xs text-neutral-500 mb-1.5 uppercase font-bold">標籤</div>
+              <div class="flex flex-wrap gap-1">
+                ${(file.tags || []).map(t => `
+                  <span class="px-2 py-0.5 rounded-sm border border-[#262626] bg-[#171717] text-[11px] text-neutral-300">
+                    #${t}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Notes -->
+            ${file.notes ? `
+              <div class="pt-2 border-t border-[#262626]">
+                <div class="text-xs text-neutral-500 mb-1 uppercase font-bold">客觀備註</div>
+                <p class="text-xs text-neutral-300 font-serif leading-relaxed bg-[#050505] p-2.5 rounded-sm border border-[#262626]">
+                  ${file.notes}
+                </p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+    }
+
+    // ================================================================
+    // KEYBOARD SHORTCUTS (↑/↓: Asset, ←/→: Group, I: Drawer, Esc: Exit)
+    // ================================================================
+    window.addEventListener('keydown', (e) => {
+      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+      if (isInput) {
+        if (e.key === 'Escape') {
+          isEditing = false;
+          renderInspector();
+        }
+        return;
+      }
+
+      // Vertical: Asset navigation
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateAsset(-1);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        navigateAsset(1);
+      }
+
+      // Horizontal: Group navigation
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigateGroup(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigateGroup(1);
+      }
+
+      // I: Inspector Drawer
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        toggleDrawer();
+      }
+
+      // Z: Zoom
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        toggleZoom();
+      }
+
+      // E: Edit
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        openEditMode();
+      }
+
+      // Escape: Hierarchy exit
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (isEditing) {
+          isEditing = false;
+          renderInspector();
+        } else if (isDrawerOpen) {
+          toggleDrawer(false);
+        } else {
+          closeDialog();
+        }
+      }
+    });
+
+    // Start
+    init();
+  </script>
+</body>
+</html>

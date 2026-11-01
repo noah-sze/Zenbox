@@ -15,7 +15,7 @@ import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { TrashView } from '@/components/trash/TrashView';
 import { BatchActionBar } from '@/components/batch/BatchActionBar';
 import { useToast } from '@/components/ui/toast';
-import { MediaItem, Tag, Library, DirectoryDetail, Collection } from '@/types/media';
+import { MediaItem, Tag, Library, DirectoryDetail, Collection, SystemStats } from '@/types/media';
 import { getStoredThemeSettings, applyThemeSettings } from '@/lib/theme';
 
 export const App: React.FC = () => {
@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   const [directories, setDirectories] = useState<DirectoryDetail[]>([]);
   const [activeDirectory, setActiveDirectory] = useState<string | null>(null);
   const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaTypeFilter>('all');
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [trashCount, setTrashCount] = useState<number>(0);
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<number>>(new Set());
   const [lastSelectedMediaId, setLastSelectedMediaId] = useState<number | null>(null);
@@ -43,6 +44,24 @@ export const App: React.FC = () => {
   const [createAssetTab, setCreateAssetTab] = useState<CreateAssetTab>('collect');
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+
+  // Media navigation within current item list
+  const selectedItemIndex = useMemo(() => {
+    if (!selectedItem) return -1;
+    return items.findIndex((it) => it.id === selectedItem.id);
+  }, [selectedItem, items]);
+
+  const handlePrevMediaItem = useCallback(() => {
+    if (selectedItemIndex > 0) {
+      setSelectedItem(items[selectedItemIndex - 1]);
+    }
+  }, [selectedItemIndex, items]);
+
+  const handleNextMediaItem = useCallback(() => {
+    if (selectedItemIndex >= 0 && selectedItemIndex < items.length - 1) {
+      setSelectedItem(items[selectedItemIndex + 1]);
+    }
+  }, [selectedItemIndex, items]);
 
   // Folder Dialog states
   const [selectedDirForDetail, setSelectedDirForDetail] = useState<DirectoryDetail | null>(null);
@@ -92,14 +111,17 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Fetch Trash count
-  const fetchTrashCount = useCallback(async () => {
+  // Fetch System Stats (counts for media, documents, bookmarks, trash)
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch('/api/stats');
       if (res.ok) {
         const json = await res.json();
-        if (json.data?.trash?.total !== undefined) {
-          setTrashCount(json.data.trash.total);
+        if (json.data) {
+          setSystemStats(json.data);
+          if (json.data.trash?.total !== undefined) {
+            setTrashCount(json.data.trash.total);
+          }
         }
       }
     } catch {
@@ -107,13 +129,14 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Fetch Media list with library, tags, and directory filter
+  // Fetch Media list with library, tags, directory, and mediaType filter
   const fetchMedia = useCallback(
     async (
       targetPage: number,
       tags: string[],
       libraryId: number | null,
       dir: string | null,
+      mediaType: MediaTypeFilter = 'all',
       append = false
     ) => {
       setIsLoading(true);
@@ -121,8 +144,12 @@ export const App: React.FC = () => {
         const tagParam = tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : '';
         const libParam = libraryId !== null ? `&libraryId=${libraryId}` : '';
         const dirParam = dir !== null ? `&dir=${encodeURIComponent(dir)}` : '';
+        const typeParam =
+          mediaType !== 'all' && mediaType !== 'collection' && mediaType !== 'trash'
+            ? `&type=${mediaType}`
+            : '';
         const res = await fetch(
-          `/api/media?page=${targetPage}&limit=24${tagParam}${libParam}${dirParam}`
+          `/api/media?page=${targetPage}&limit=24${tagParam}${libParam}${dirParam}${typeParam}`
         );
         if (res.ok) {
           const json = (await res.json()) as { data: MediaItem[]; count: number };
@@ -180,37 +207,39 @@ export const App: React.FC = () => {
     fetchLibraries();
     fetchDirectories();
     fetchTags();
-    fetchTrashCount();
-  }, [fetchLibraries, fetchDirectories, fetchTags, fetchTrashCount]);
+    fetchStats();
+  }, [fetchLibraries, fetchDirectories, fetchTags, fetchStats]);
 
-  // Query media and collections whenever activeTags, activeLibraryId, or activeDirectory changes
+  // Query media and collections whenever activeTags, activeLibraryId, activeDirectory, or mediaTypeFilter changes
   useEffect(() => {
     setPage(1);
-    fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+    fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
     fetchCollections(activeTags, activeLibraryId, activeDirectory);
-  }, [fetchMedia, fetchCollections, activeTags, activeLibraryId, activeDirectory]);
+  }, [fetchMedia, fetchCollections, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter]);
 
   // Load next page for infinite scroll
   const handleLoadMore = useCallback(() => {
     if (!isLoading && hasMore) {
       const nextPage = page + 1;
       setPage(nextPage);
-      fetchMedia(nextPage, activeTags, activeLibraryId, activeDirectory, true);
+      fetchMedia(nextPage, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, true);
     }
-  }, [page, isLoading, hasMore, activeTags, activeLibraryId, activeDirectory, fetchMedia]);
+  }, [page, isLoading, hasMore, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, fetchMedia]);
 
-  // Tag filter toggle
+  // Tag filter toggle (mutually exclusive with folders and types)
   const handleToggleTag = (tag: string) => {
-    setActiveTags((prev) => {
-      if (prev.includes(tag)) {
-        return prev.filter((t) => t !== tag);
-      }
-      return [...prev, tag];
-    });
+    handleClearSelection();
+    setActiveLibraryId(null);
+    setActiveDirectory(null);
+    setMediaTypeFilter('all');
+    setActiveTags((prev) => (prev.includes(tag) ? [] : [tag]));
   };
 
-  // Directory filter selection (Library root or subdirectory)
+  // Directory filter selection (Library root or subdirectory, mutually exclusive with tags and types)
   const handleSelectDirectory = (dir: string | null, libraryId?: number) => {
+    handleClearSelection();
+    setActiveTags([]);
+    setMediaTypeFilter('all');
     if (dir === null) {
       setActiveDirectory(null);
       if (libraryId === undefined) {
@@ -232,7 +261,8 @@ export const App: React.FC = () => {
       await fetchLibraries();
       await fetchDirectories();
       await fetchTags();
-      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+      await fetchStats();
+      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
       await fetchCollections(activeTags, activeLibraryId, activeDirectory);
     } finally {
       setIsSyncing(false);
@@ -313,25 +343,18 @@ export const App: React.FC = () => {
     return items;
   }, [items, mediaTypeFilter]);
 
-  const documentCount = useMemo(() => {
-    return items.filter(
-      (item) =>
-        !item.mime_type.startsWith('image/') &&
-        !item.mime_type.startsWith('video/') &&
-        item.mime_type !== 'application/x-url' &&
-        !item.filename.endsWith('.url') &&
-        !item.filename.endsWith('.webloc')
-    ).length;
-  }, [items]);
+  const totalMediaCount = systemStats?.media?.total ?? items.length;
+  const documentCount = systemStats?.media?.documents ?? 0;
+  const bookmarkCount = systemStats?.media?.bookmarks ?? 0;
 
-  const bookmarkCount = useMemo(() => {
-    return items.filter(
-      (item) =>
-        item.mime_type === 'application/x-url' ||
-        item.filename.endsWith('.url') ||
-        item.filename.endsWith('.webloc')
-    ).length;
-  }, [items]);
+  // Media type selection (mutually exclusive with folders and tags)
+  const handleSelectMediaType = (type: MediaTypeFilter) => {
+    handleClearSelection();
+    setActiveLibraryId(null);
+    setActiveDirectory(null);
+    setActiveTags([]);
+    setMediaTypeFilter(type);
+  };
 
   // Multi-select handlers
   const handleToggleSelectMedia = useCallback(
@@ -416,8 +439,8 @@ export const App: React.FC = () => {
       if (!res.ok) throw new Error('批量移至垃圾桶失敗');
       toast('已移至垃圾桶', 'success');
       handleClearSelection();
-      await fetchTrashCount();
-      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+      await fetchStats();
+      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
       await fetchDirectories();
     } catch (err) {
       const msg = err instanceof Error ? err.message : '操作失敗';
@@ -438,7 +461,7 @@ export const App: React.FC = () => {
       toast('已更新標籤', 'success');
       handleClearSelection();
       await fetchTags();
-      await fetchMedia(page, activeTags, activeLibraryId, activeDirectory, false);
+      await fetchMedia(page, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '操作失敗';
       toast(msg, 'error');
@@ -463,7 +486,7 @@ export const App: React.FC = () => {
       toast('已建立合集', 'success');
       handleClearSelection();
       await fetchCollections(activeTags, activeLibraryId, activeDirectory);
-      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '操作失敗';
       toast(msg, 'error');
@@ -490,7 +513,7 @@ export const App: React.FC = () => {
       toast('已移動', 'success');
       handleClearSelection();
       await fetchDirectories();
-      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+      await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '操作失敗';
       toast(msg, 'error');
@@ -501,40 +524,29 @@ export const App: React.FC = () => {
     <SidebarProvider defaultOpen={true}>
       {/* Collapsible Left Sidebar with Integrated Library & Folder Tree View */}
       <AppSidebar
-        mediaCount={items.length}
+        mediaCount={totalMediaCount}
         trashCount={trashCount}
         availableTags={availableTags}
         activeTags={activeTags}
-        onToggleTag={(t) => {
-          handleClearSelection();
-          handleToggleTag(t);
-        }}
-        onClearTags={() => {
-          handleClearSelection();
-          setActiveTags([]);
-        }}
+        onToggleTag={handleToggleTag}
         libraries={libraries}
         activeLibraryId={activeLibraryId}
         onSelectLibrary={(id) => {
           handleClearSelection();
+          setActiveTags([]);
+          setMediaTypeFilter('all');
           setActiveLibraryId(id);
           setActiveDirectory(null);
         }}
         onOpenLibraries={() => setIsLibraryOpen(true)}
         directories={directories}
         activeDirectory={activeDirectory}
-        onSelectDirectory={(dir, libId) => {
-          handleClearSelection();
-          handleSelectDirectory(dir, libId);
-        }}
+        onSelectDirectory={handleSelectDirectory}
         onOpenCreateFolder={handleOpenCreateFolder}
         onOpenFolderOverview={() => setIsFolderOverviewOpen(true)}
         onOpenFolderDetail={setSelectedDirForDetail}
         mediaTypeFilter={mediaTypeFilter}
-        onSelectMediaType={(type) => {
-          handleClearSelection();
-          setMediaTypeFilter(type);
-        }}
+        onSelectMediaType={handleSelectMediaType}
         documentCount={documentCount}
         bookmarkCount={bookmarkCount}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -555,18 +567,25 @@ export const App: React.FC = () => {
           activeLibraryId={activeLibraryId}
           activeDirectory={activeDirectory}
           mediaTypeFilter={mediaTypeFilter}
+          activeTags={activeTags}
           onNavigateRoot={() => {
             handleClearSelection();
             setActiveLibraryId(null);
             setActiveDirectory(null);
+            setActiveTags([]);
+            setMediaTypeFilter('all');
           }}
           onNavigateLibrary={(libId) => {
             handleClearSelection();
+            setActiveTags([]);
+            setMediaTypeFilter('all');
             setActiveLibraryId(libId);
             setActiveDirectory('');
           }}
           onNavigateDirectory={(dir, libId) => {
             handleClearSelection();
+            setActiveTags([]);
+            setMediaTypeFilter('all');
             setActiveLibraryId(libId);
             setActiveDirectory(dir);
           }}
@@ -577,18 +596,18 @@ export const App: React.FC = () => {
           {mediaTypeFilter === 'trash' ? (
             <TrashView
               onItemRestored={async () => {
-                await fetchTrashCount();
-                await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+                await fetchStats();
+                await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
                 await fetchCollections(activeTags, activeLibraryId, activeDirectory);
                 await fetchTags();
                 await fetchDirectories();
               }}
               onItemDeleted={async () => {
-                await fetchTrashCount();
+                await fetchStats();
                 await fetchDirectories();
               }}
               onTrashEmptied={async () => {
-                await fetchTrashCount();
+                await fetchStats();
                 await fetchDirectories();
               }}
             />
@@ -649,7 +668,8 @@ export const App: React.FC = () => {
         onLibrariesChanged={async () => {
           await fetchLibraries();
           await fetchDirectories();
-          await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+          await fetchStats();
+          await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
           await fetchCollections(activeTags, activeLibraryId, activeDirectory);
         }}
       />
@@ -694,6 +714,14 @@ export const App: React.FC = () => {
         libraries={libraries}
         directories={directories}
         availableTags={availableTags}
+        onPrev={selectedItemIndex > 0 ? handlePrevMediaItem : undefined}
+        onNext={
+          selectedItemIndex >= 0 && selectedItemIndex < items.length - 1
+            ? handleNextMediaItem
+            : undefined
+        }
+        currentIndex={selectedItemIndex >= 0 ? selectedItemIndex + 1 : undefined}
+        totalCount={items.length}
         onItemUpdated={(updated) => {
           setSelectedItem(updated);
           setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
@@ -705,7 +733,7 @@ export const App: React.FC = () => {
           setItems((prev) => prev.filter((it) => it.id !== deletedId));
           fetchTags();
           fetchDirectories();
-          fetchTrashCount();
+          fetchStats();
         }}
       />
 
@@ -724,10 +752,10 @@ export const App: React.FC = () => {
           setSelectedCollection(null);
           setCollections((prev) => prev.filter((c) => c.id !== deletedId));
           if (!disbanded) {
-            fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+            fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
           }
           fetchTags();
-          fetchTrashCount();
+          fetchStats();
         }}
       />
 
@@ -745,10 +773,12 @@ export const App: React.FC = () => {
           setItems((prev) => [newAsset, ...prev]);
           fetchTags();
           fetchDirectories();
+          fetchStats();
         }}
         onCollectionCreated={(newCol) => {
           setCollections((prev) => [newCol, ...prev]);
           fetchCollections(activeTags, activeLibraryId, activeDirectory);
+          fetchStats();
         }}
       />
 
@@ -764,7 +794,8 @@ export const App: React.FC = () => {
           await fetchLibraries();
           await fetchDirectories();
           await fetchTags();
-          await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, false);
+          await fetchStats();
+          await fetchMedia(1, activeTags, activeLibraryId, activeDirectory, mediaTypeFilter, false);
           await fetchCollections(activeTags, activeLibraryId, activeDirectory);
         }}
       />

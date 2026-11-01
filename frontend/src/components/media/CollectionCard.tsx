@@ -133,10 +133,10 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
   return (
     <div
       onClick={() => onSelect?.(collection)}
-      className="group relative flex flex-col overflow-hidden rounded-sm border border-neutral-700 bg-card transition-colors hover:border-white shadow-none cursor-pointer select-none font-mono w-full min-w-0"
+      className="group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card transition-colors hover:border-foreground shadow-none cursor-pointer select-none font-mono w-full min-w-0"
     >
       {/* Stacked Album Perception: Top and Right 1px offset layered border accents */}
-      <div className="absolute top-0 right-0 w-3 h-3 border-b border-l border-white/20 bg-neutral-900 pointer-events-none z-20" />
+      <div className="absolute top-0 right-0 w-3 h-3 border-b border-l border-border bg-card pointer-events-none z-20" />
 
       {/* Main Preview Container with Scrubbing */}
       <div
@@ -178,14 +178,14 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
         )}
 
         {/* Top-left: Collection Stack Badge */}
-        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/85 backdrop-blur-[2px] border border-white/20 text-[10px] font-mono text-white flex items-center gap-1.5 z-20">
-          <Layers className="h-3 w-3 text-white" />
+        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[10px] font-mono text-foreground flex items-center gap-1.5 z-20">
+          <Layers className="h-3 w-3 text-foreground" />
           <span className="font-semibold">{collection.item_count}</span>
         </div>
 
         {/* Top-right: Active item type badge when scrubbing */}
         {activeItem && isScrubbing && (
-          <div className="absolute top-2 right-5 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-300 flex items-center gap-1 z-20">
+          <div className="absolute top-2 right-5 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[9px] font-mono text-foreground flex items-center gap-1 z-20">
             {activeIsVideo ? (
               <>
                 <Film className="h-2.5 w-2.5" />
@@ -207,13 +207,13 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
 
         {/* Bottom scrub timeline dots if more than 1 item and hovered */}
         {previewItems.length > 1 && isScrubbing && (
-          <div className="absolute bottom-2 inset-x-2 flex items-center justify-center gap-1 z-20 bg-black/60 py-0.5 rounded-sm backdrop-blur-[2px]">
+          <div className="absolute bottom-2 inset-x-2 flex items-center justify-center gap-1 z-20 bg-card py-0.5 rounded-sm border border-border">
             {previewItems.map((_, idx) => (
               <span
                 key={idx}
                 className={cn(
                   'h-1 rounded-none transition-none',
-                  idx === hoverIndex ? 'w-4 bg-white' : 'w-1.5 bg-neutral-600'
+                  idx === hoverIndex ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground'
                 )}
               />
             ))}
@@ -232,7 +232,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
 
         {/* Size & Item Breakdown */}
         <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground gap-1">
-          <span className="truncate max-w-[150px] font-mono text-neutral-400">
+          <span className="truncate max-w-[150px] font-mono text-muted-foreground">
             {countLabel} · {formatSize(collection.total_bytes)}
           </span>
           <span className="font-mono shrink-0">{formatDate(collection.created_at)}</span>
@@ -240,7 +240,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
 
         {/* Notes preview if present */}
         {collection.notes && (
-          <p className="text-[11px] text-neutral-400 font-serif line-clamp-1 border-l border-neutral-700 pl-1.5 my-0.5">
+          <p className="text-[11px] text-muted-foreground font-serif line-clamp-1 border-l border-border pl-1.5 my-0.5">
             {collection.notes}
           </p>
         )}

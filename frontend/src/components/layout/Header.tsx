@@ -22,6 +22,7 @@ interface HeaderProps {
   activeLibraryId: number | null;
   activeDirectory: string | null;
   mediaTypeFilter: MediaTypeFilter;
+  activeTags?: string[];
   onNavigateRoot: () => void;
   onNavigateLibrary: (libraryId: number) => void;
   onNavigateDirectory: (directory: string, libraryId: number) => void;
@@ -36,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeLibraryId,
   activeDirectory,
   mediaTypeFilter,
+  activeTags = [],
   onNavigateRoot,
   onNavigateLibrary,
   onNavigateDirectory,
@@ -47,17 +49,30 @@ export const Header: React.FC<HeaderProps> = ({
     ? activeDirectory.split('/').filter(Boolean)
     : [];
 
-  const getRootLabel = () => {
-    if (mediaTypeFilter === 'image') return '圖片';
-    if (mediaTypeFilter === 'video') return '影片';
-    if (mediaTypeFilter === 'document') return '文件';
-    if (mediaTypeFilter === 'bookmark') return '書籤';
-    if (mediaTypeFilter === 'collection') return '合集';
-    if (mediaTypeFilter === 'trash') return '垃圾桶';
-    return '全部媒體';
+  const getTypeLabel = (filter: MediaTypeFilter) => {
+    switch (filter) {
+      case 'image':
+        return '圖片';
+      case 'video':
+        return '影片';
+      case 'document':
+        return '文件';
+      case 'bookmark':
+        return '書籤';
+      case 'collection':
+        return '合集';
+      case 'trash':
+        return '垃圾桶';
+      default:
+        return '全部媒體';
+    }
   };
 
-  const isAtRoot = activeLibraryId === null && !activeDirectory;
+  const isAtRoot =
+    activeLibraryId === null &&
+    !activeDirectory &&
+    activeTags.length === 0 &&
+    mediaTypeFilter === 'all';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background backdrop-blur-md font-mono">
@@ -66,21 +81,39 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-3 min-w-0 pr-4">
           <SidebarTrigger />
 
-          <div className="h-4 w-px bg-border/60 shrink-0" />
+          <div className="h-4 w-px bg-border shrink-0" />
 
           {/* Breadcrumb Hierarchy */}
           <Breadcrumb className="min-w-0">
             <BreadcrumbList className="flex-nowrap overflow-hidden">
-              {/* Root Level: All Media / Media Type */}
+              {/* Root Level: All Media */}
               <BreadcrumbItem className="shrink-0">
                 {isAtRoot ? (
-                  <BreadcrumbPage>{getRootLabel()}</BreadcrumbPage>
+                  <BreadcrumbPage>全部媒體</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink onClick={onNavigateRoot}>
-                    {getRootLabel()}
-                  </BreadcrumbLink>
+                  <BreadcrumbLink onClick={onNavigateRoot}>全部媒體</BreadcrumbLink>
                 )}
               </BreadcrumbItem>
+
+              {/* Type Filter Level */}
+              {mediaTypeFilter !== 'all' && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem className="shrink-0">
+                    <BreadcrumbPage>{getTypeLabel(mediaTypeFilter)}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              )}
+
+              {/* Tag Filter Level */}
+              {activeTags.length > 0 && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem className="shrink-0">
+                    <BreadcrumbPage>#{activeTags[0]}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              )}
 
               {/* Library Level */}
               {currentLibrary && (
@@ -136,8 +169,8 @@ export const Header: React.FC<HeaderProps> = ({
               id="header-create-asset-btn"
               type="button"
               onClick={onOpenCreateAsset}
-              className="flex items-center space-x-1.5 h-8 px-2.5 rounded-sm bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors shadow-none select-none"
-              title="收集網址或上傳檔案"
+              className="flex items-center space-x-1.5 h-8 px-2.5 rounded-sm bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-none select-none border border-transparent"
+              title="新增"
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">新增</span>
@@ -153,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Search className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">搜尋或指令...</span>
             <kbd className="hidden sm:inline-block pointer-events-none text-[10px] text-muted-foreground bg-secondary px-1 rounded-sm border border-border font-mono">
-              ⌘K
+              ⌘ K
             </kbd>
           </button>
 

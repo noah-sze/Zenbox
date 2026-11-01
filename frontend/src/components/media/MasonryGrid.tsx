@@ -114,9 +114,6 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
         <span className="text-sm font-mono text-muted-foreground">
           {isCollectionOnly ? '無合集' : '無媒體'}
         </span>
-        <span className="text-xs font-mono text-neutral-600 mt-1">
-          {isCollectionOnly ? '可在上傳時選取多個檔案建立合集' : '請將檔案放置於 /storage/originals'}
-        </span>
       </div>
     );
   }

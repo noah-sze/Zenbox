@@ -65,7 +65,7 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
             <Folder className="h-4 w-4 text-foreground" />
-            <h2 className="text-sm font-bold text-foreground tracking-wide">文件夾詳細</h2>
+            <h2 className="text-sm font-bold text-foreground tracking-wide">詳情</h2>
             <Badge variant="secondary" className="text-[10px] py-0 px-1.5 border-border">
               {isRoot ? '根目錄' : directory.name}
             </Badge>
@@ -84,17 +84,17 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-2.5 rounded-sm border border-border bg-card">
-              <div className="text-[10px] text-muted-foreground uppercase">總媒體數</div>
+              <div className="text-[10px] text-muted-foreground uppercase">媒體數</div>
               <div className="text-base font-bold text-foreground mt-1">
                 {directory.totalRecursiveCount}
               </div>
-              <div className="text-[9px] text-neutral-400">
+              <div className="text-[9px] text-muted-foreground">
                 直屬 {directory.mediaCount}
               </div>
             </div>
 
             <div className="p-2.5 rounded-sm border border-border bg-card">
-              <div className="text-[10px] text-muted-foreground uppercase">磁碟佔用</div>
+              <div className="text-[10px] text-muted-foreground uppercase">大小</div>
               <div className="text-base font-bold text-foreground mt-1">
                 {formatBytes(directory.totalBytes)}
               </div>
@@ -104,60 +104,60 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
             </div>
 
             <div className="p-2.5 rounded-sm border border-border bg-card">
-              <div className="text-[10px] text-muted-foreground uppercase">圖片數量</div>
+              <div className="text-[10px] text-muted-foreground uppercase">圖片</div>
               <div className="text-base font-bold text-foreground mt-1 flex items-center gap-1">
                 <FileImage className="h-3 w-3 text-muted-foreground" />
                 {directory.imageCount}
               </div>
               <div className="text-[9px] text-muted-foreground">
-                WebP / JPG 等
+                WebP / JPG
               </div>
             </div>
 
             <div className="p-2.5 rounded-sm border border-border bg-card">
-              <div className="text-[10px] text-muted-foreground uppercase">影片數量</div>
+              <div className="text-[10px] text-muted-foreground uppercase">影片</div>
               <div className="text-base font-bold text-foreground mt-1 flex items-center gap-1">
                 <FileVideo className="h-3 w-3 text-muted-foreground" />
                 {directory.videoCount}
               </div>
               <div className="text-[9px] text-muted-foreground">
-                MP4 / MOV 等
+                MP4 / MOV
               </div>
             </div>
           </div>
 
           {/* Directory Details Table */}
           <div className="space-y-2.5 border border-border rounded-sm p-3 bg-card">
-            <div className="flex items-start justify-between py-1 border-b border-border/50">
-              <span className="text-muted-foreground shrink-0 w-24">所屬儲存庫</span>
+            <div className="flex items-start justify-between py-1 border-b border-border">
+              <span className="text-muted-foreground shrink-0 w-24">儲存庫</span>
               <div className="flex items-center gap-1.5 text-right text-foreground break-all">
                 <HardDrive className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{directory.libraryName}</span>
               </div>
             </div>
 
-            <div className="flex items-start justify-between py-1 border-b border-border/50">
+            <div className="flex items-start justify-between py-1 border-b border-border">
               <span className="text-muted-foreground shrink-0 w-24">相對路徑</span>
               <span className="text-foreground text-right break-all">
-                {directory.directory || '/ (根目錄)'}
+                {directory.directory || '/'}
               </span>
             </div>
 
-            <div className="flex items-start justify-between py-1 border-b border-border/50">
-              <span className="text-muted-foreground shrink-0 w-24">子文件夾數</span>
+            <div className="flex items-start justify-between py-1 border-b border-border">
+              <span className="text-muted-foreground shrink-0 w-24">子文件夾</span>
               <span className="text-foreground text-right">
-                {directory.subDirectoryCount} 個
+                {directory.subDirectoryCount}
               </span>
             </div>
 
-            <div className="flex items-start justify-between py-1 border-b border-border/50">
-              <span className="text-muted-foreground shrink-0 w-24">實體路徑</span>
+            <div className="flex items-start justify-between py-1 border-b border-border">
+              <span className="text-muted-foreground shrink-0 w-24">路徑</span>
               <span className="text-muted-foreground text-right break-all select-all text-[11px]">
                 {directory.fullPath}
               </span>
             </div>
 
-            <div className="flex items-start justify-between py-1 border-b border-border/50">
+            <div className="flex items-start justify-between py-1 border-b border-border">
               <span className="text-muted-foreground shrink-0 w-24 flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 <span>建立時間</span>
@@ -170,7 +170,7 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
             <div className="flex items-start justify-between py-1">
               <span className="text-muted-foreground shrink-0 w-24 flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                <span>最後變更</span>
+                <span>變更時間</span>
               </span>
               <span className="text-foreground text-right">
                 {formatDate(directory.updatedAt)}
@@ -187,10 +187,10 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
                   onCreateSubfolder(directory);
                   onClose();
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-none text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-none text-xs"
               >
                 <FolderPlus className="h-3.5 w-3.5" />
-                <span>新建子文件夾</span>
+                <span>新增子文件夾</span>
               </button>
             ) : <div />}
 
@@ -198,7 +198,7 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-sm border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-none"
+                className="px-3 py-1.5 rounded-sm border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-none"
               >
                 關閉
               </button>
@@ -208,9 +208,9 @@ export const FolderDetailDialog: React.FC<FolderDetailDialogProps> = ({
                   onSelectDirectory(directory);
                   onClose();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-none"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
               >
-                <span>瀏覽此處</span>
+                <span>瀏覽</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>

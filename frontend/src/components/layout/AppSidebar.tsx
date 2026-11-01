@@ -6,7 +6,6 @@ import {
   Tag as TagIcon,
   HardDrive,
   Plus,
-  X,
   FolderTree,
   Layers,
   Settings,
@@ -40,7 +39,6 @@ interface AppSidebarProps {
   availableTags: Tag[];
   activeTags: string[];
   onToggleTag: (tagName: string) => void;
-  onClearTags: () => void;
   libraries: Library[];
   activeLibraryId: number | null;
   onSelectLibrary: (id: number | null) => void;
@@ -68,7 +66,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   availableTags,
   activeTags,
   onToggleTag,
-  onClearTags,
   activeLibraryId,
   onOpenLibraries,
   directories,
@@ -107,8 +104,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <button
               type="button"
               onClick={onOpenSettings}
-              className="flex items-center justify-center h-7 w-7 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:border-sidebar-ring transition-colors shadow-none select-none group-data-[collapsible=icon]:hidden"
-              title="設置 (⌘,)"
+              className="flex items-center justify-center h-7 w-7 rounded-sm border border-sidebar-border bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent hover:border-sidebar-ring transition-colors shadow-none select-none group-data-[collapsible=icon]:hidden"
+              title="設定 (⌘,)"
             >
               <Settings className="h-3.5 w-3.5" />
             </button>
@@ -118,106 +115,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
       {/* 2. Content Sections */}
       <SidebarContent>
-        {/* Navigation / Types */}
-        <SidebarGroup>
-          <SidebarGroupLabel>視圖</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'all' && activeLibraryId === null && activeDirectory === null}
-                  onClick={() => {
-                    onSelectMediaType('all');
-                    onSelectDirectory(null);
-                  }}
-                  tooltip="全部媒體"
-                >
-                  <LayoutGrid className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">全部媒體</span>
-                  <SidebarMenuBadge>{mediaCount}</SidebarMenuBadge>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'image'}
-                  onClick={() => onSelectMediaType('image')}
-                  tooltip="圖片"
-                >
-                  <ImageIcon className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">圖片</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'video'}
-                  onClick={() => onSelectMediaType('video')}
-                  tooltip="影片"
-                >
-                  <Film className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">影片</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'document'}
-                  onClick={() => onSelectMediaType('document')}
-                  tooltip="文件"
-                >
-                  <FileText className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">文件</span>
-                  {documentCount > 0 && (
-                    <SidebarMenuBadge className="font-mono">{documentCount}</SidebarMenuBadge>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'bookmark'}
-                  onClick={() => onSelectMediaType('bookmark')}
-                  tooltip="書籤"
-                >
-                  <Globe className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">書籤</span>
-                  {bookmarkCount > 0 && (
-                    <SidebarMenuBadge className="font-mono">{bookmarkCount}</SidebarMenuBadge>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'collection'}
-                  onClick={() => onSelectMediaType('collection')}
-                  tooltip="合集"
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">合集</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={mediaTypeFilter === 'trash'}
-                  onClick={() => onSelectMediaType('trash')}
-                  tooltip="垃圾桶"
-                >
-                  <Trash2 className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">垃圾桶</span>
-                  {trashCount > 0 && (
-                    <SidebarMenuBadge className="font-mono">{trashCount}</SidebarMenuBadge>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
         {/* Integrated Storage Library & Folder Tree View */}
         <SidebarGroup>
           <div className="flex items-center justify-between">
@@ -256,7 +153,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 placeholder="過濾文件夾..."
                 value={folderSearchQuery}
                 onChange={(e) => setFolderSearchQuery(e.target.value)}
-                className="w-full bg-sidebar-accent/50 border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring"
+                className="w-full bg-sidebar-accent border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring font-mono"
               />
             </div>
           )}
@@ -277,22 +174,106 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
         <SidebarSeparator />
 
+        {/* Navigation / Types */}
+        <SidebarGroup>
+          <SidebarGroupLabel>類型</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'all' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('all')}
+                  tooltip="全部媒體"
+                >
+                  <LayoutGrid className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">全部媒體</span>
+                  <SidebarMenuBadge>{mediaCount}</SidebarMenuBadge>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'image' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('image')}
+                  tooltip="圖片"
+                >
+                  <ImageIcon className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">圖片</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'video' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('video')}
+                  tooltip="影片"
+                >
+                  <Film className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">影片</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'document' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('document')}
+                  tooltip="文件"
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">文件</span>
+                  {documentCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{documentCount}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'bookmark' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('bookmark')}
+                  tooltip="書籤"
+                >
+                  <Globe className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">書籤</span>
+                  {bookmarkCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{bookmarkCount}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'collection' && activeLibraryId === null && activeDirectory === null && activeTags.length === 0}
+                  onClick={() => onSelectMediaType('collection')}
+                  tooltip="合集"
+                >
+                  <Layers className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">合集</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'trash'}
+                  onClick={() => onSelectMediaType('trash')}
+                  tooltip="垃圾桶"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">垃圾桶</span>
+                  {trashCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{trashCount}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
         {/* Tags Group */}
         <SidebarGroup>
-          <div className="flex items-center justify-between">
-            <SidebarGroupLabel>標籤檢索</SidebarGroupLabel>
-            {activeTags.length > 0 && (
-              <button
-                type="button"
-                onClick={onClearTags}
-                className="group-data-[collapsible=icon]:hidden text-[10px] text-sidebar-foreground/60 hover:text-sidebar-foreground flex items-center gap-1"
-                title="清除標籤過濾"
-              >
-                <X className="h-3 w-3" />
-                <span>清除</span>
-              </button>
-            )}
-          </div>
+          <SidebarGroupLabel>標籤</SidebarGroupLabel>
 
           {/* Quick Tag Search within Sidebar */}
           {availableTags.length > 5 && (
@@ -302,7 +283,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 placeholder="過濾標籤..."
                 value={tagSearchQuery}
                 onChange={(e) => setTagSearchQuery(e.target.value)}
-                className="w-full bg-sidebar-accent/50 border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring"
+                className="w-full bg-sidebar-accent border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring font-mono"
               />
             </div>
           )}
@@ -315,7 +296,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             ) : (
               <SidebarMenu>
                 {filteredTags.map((tag) => {
-                  const isActive = activeTags.includes(tag.name);
+                  const isActive =
+                    activeTags.includes(tag.name) &&
+                    mediaTypeFilter === 'all' &&
+                    activeLibraryId === null &&
+                    activeDirectory === null;
                   return (
                     <SidebarMenuItem key={tag.id}>
                       <SidebarMenuButton

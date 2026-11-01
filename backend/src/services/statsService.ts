@@ -9,6 +9,8 @@ export interface SystemStats {
     total: number;
     images: number;
     videos: number;
+    documents?: number;
+    bookmarks?: number;
     other: number;
   };
   tags: {
@@ -61,6 +63,12 @@ export class StatsService {
     const videosRow = DbClient.queryOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM media WHERE mime_type LIKE 'video/%' AND is_trashed = 0"
     );
+    const documentsRow = DbClient.queryOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM media WHERE NOT (mime_type LIKE 'image/%' OR mime_type LIKE 'video/%' OR mime_type = 'application/x-url') AND is_trashed = 0"
+    );
+    const bookmarksRow = DbClient.queryOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM media WHERE mime_type = 'application/x-url' AND is_trashed = 0"
+    );
     const trashedRow = DbClient.queryOne<{ count: number; bytes: number }>(
       'SELECT COUNT(*) as count, COALESCE(SUM(file_size), 0) as bytes FROM media WHERE is_trashed = 1'
     );
@@ -68,7 +76,9 @@ export class StatsService {
     const totalMedia = totalRow ? Number(totalRow.count) : 0;
     const totalImages = imagesRow ? Number(imagesRow.count) : 0;
     const totalVideos = videosRow ? Number(videosRow.count) : 0;
-    const totalOther = Math.max(0, totalMedia - totalImages - totalVideos);
+    const totalDocuments = documentsRow ? Number(documentsRow.count) : 0;
+    const totalBookmarks = bookmarksRow ? Number(bookmarksRow.count) : 0;
+    const totalOther = Math.max(0, totalMedia - totalImages - totalVideos - totalDocuments - totalBookmarks);
 
     // 2. Tag metrics (active media only)
     const tagsCountRow = DbClient.queryOne<{ count: number }>('SELECT COUNT(*) as count FROM tags');
@@ -94,6 +104,8 @@ export class StatsService {
         total: totalMedia,
         images: totalImages,
         videos: totalVideos,
+        documents: totalDocuments,
+        bookmarks: totalBookmarks,
         other: totalOther
       },
       tags: {

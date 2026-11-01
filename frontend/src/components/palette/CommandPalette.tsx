@@ -67,7 +67,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <span>{tag}</span>
                   {isActive && (
                     <span className="ml-2 text-[10px] text-foreground font-semibold">
-                      [ 已選 ]
+                      [已選]
                     </span>
                   )}
                   <CommandShortcut>FILTER</CommandShortcut>
@@ -78,7 +78,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           <CommandSeparator />
 
-          <CommandGroup heading="資產操作">
+          <CommandGroup heading="操作">
             {onOpenCreateAsset && (
               <>
                 <CommandItem
@@ -88,8 +88,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   }}
                 >
                   <LinkIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                  <span>收集外部網址 (URL)</span>
-                  <CommandShortcut>NEW</CommandShortcut>
+                  <span>收集網址</span>
+                  <CommandShortcut>URL</CommandShortcut>
                 </CommandItem>
                 <CommandItem
                   onSelect={() => {
@@ -98,8 +98,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   }}
                 >
                   <UploadIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                  <span>上傳本機檔案</span>
-                  <CommandShortcut>UPLOAD</CommandShortcut>
+                  <span>上傳檔案</span>
+                  <CommandShortcut>FILE</CommandShortcut>
                 </CommandItem>
               </>
             )}
@@ -107,7 +107,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           <CommandSeparator />
 
-          <CommandGroup heading="系統操作">
+          <CommandGroup heading="系統">
             {onOpenSettings && (
               <CommandItem
                 onSelect={() => {
@@ -116,8 +116,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 }}
               >
                 <Settings className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <span>開啟系統設置</span>
-                <CommandShortcut>⌘,</CommandShortcut>
+                <span>系統設定</span>
+                <CommandShortcut>⌘ ,</CommandShortcut>
               </CommandItem>
             )}
             <CommandItem
@@ -127,7 +127,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               }}
             >
               <RefreshCw className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-              <span>全量比對檔案系統與 SQLite 索引</span>
+              <span>同步索引</span>
               <CommandShortcut>SYNC</CommandShortcut>
             </CommandItem>
           </CommandGroup>

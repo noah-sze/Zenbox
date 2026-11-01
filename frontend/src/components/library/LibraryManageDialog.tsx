@@ -109,9 +109,9 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
             <HardDrive className="h-4 w-4 text-foreground" />
-            <h2 className="text-sm font-bold text-foreground tracking-wide">儲存來源管理</h2>
+            <h2 className="text-sm font-bold text-foreground tracking-wide">儲存庫</h2>
             <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
-              {libraries.length} 個來源
+              {libraries.length}
             </Badge>
           </div>
           <button
@@ -127,7 +127,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
         <div className="p-5 space-y-5 overflow-y-auto bg-card text-xs">
           {/* Library List */}
           <div className="space-y-2">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">已掛載庫</span>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">儲存庫</span>
             <div className="space-y-2">
               {libraries.map((lib) => (
                 <div
@@ -152,7 +152,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                       {lib.root_path}
                     </p>
                     <div className="flex items-center space-x-3 text-[10px] text-muted-foreground pt-0.5">
-                      <span>{lib.media_count || 0} 個項目</span>
+                      <span>{lib.media_count || 0} 項</span>
                       <span>·</span>
                       <span>{formatSize(lib.total_bytes)}</span>
                     </div>
@@ -163,7 +163,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                       type="button"
                       onClick={() => handleScan(lib.id)}
                       disabled={scanningId === lib.id}
-                      className="flex items-center space-x-1 px-2 py-1 rounded-sm border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/30 disabled:opacity-50"
+                      className="flex items-center space-x-1 px-2 py-1 rounded-sm border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground disabled:opacity-50"
                       title="重掃描"
                     >
                       <RefreshCw className={`h-3 w-3 ${scanningId === lib.id ? 'animate-spin text-foreground' : ''}`} />
@@ -173,7 +173,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDelete(lib.id)}
-                        className="p-1 rounded-sm border border-border text-muted-foreground hover:text-red-500 hover:border-red-500/40"
+                        className="p-1 rounded-sm border border-border text-muted-foreground hover:text-destructive hover:border-destructive"
                         title="卸載"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -187,32 +187,32 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
 
           {/* Mount New Library Form */}
           <div className="pt-3 border-t border-border space-y-3">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">掛載新來源</span>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">新增</span>
             {errorMessage && (
-              <p className="text-red-400 text-xs bg-red-950/20 border border-red-900/50 p-2 rounded-sm">
+              <p className="text-destructive text-xs border border-destructive p-2 rounded-sm">
                 {errorMessage}
               </p>
             )}
             <form onSubmit={handleCreate} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase">來源名稱</label>
+                  <label className="text-[10px] text-muted-foreground uppercase">名稱</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="例如: 外接照片庫"
-                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground/40"
+                    placeholder="名稱"
+                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase">實體本機路徑</label>
+                  <label className="text-[10px] text-muted-foreground uppercase">路徑</label>
                   <input
                     type="text"
                     value={rootPath}
                     onChange={(e) => setRootPath(e.target.value)}
-                    placeholder="例如: D:/Photos 或 /Volumes/Media"
-                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground/40 font-mono"
+                    placeholder="路徑"
+                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground font-mono"
                   />
                 </div>
               </div>
@@ -225,20 +225,20 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                     onChange={(e) => setIsReadonly(e.target.checked)}
                     className="rounded-none bg-card border-border text-foreground focus:ring-0"
                   />
-                  <span>唯讀模式（禁止由前端上傳或修改原檔）</span>
+                  <span>唯讀</span>
                 </label>
 
                 <button
                   type="submit"
                   disabled={isSubmitting || !name.trim() || !rootPath.trim()}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <RefreshCw className="h-3 w-3 animate-spin" />
                   ) : (
                     <Plus className="h-3 w-3" />
                   )}
-                  <span>掛載</span>
+                  <span>新增</span>
                 </button>
               </div>
             </form>

@@ -208,7 +208,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
             className="h-8 text-xs gap-1 shadow-none"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            <span>清空垃圾桶</span>
+            <span>清空</span>
           </Button>
         </div>
       </div>
@@ -217,13 +217,10 @@ export const TrashView: React.FC<TrashViewProps> = ({
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {totalItems === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-border bg-muted/40 mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-border bg-card mb-3">
               <Trash2 className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm text-foreground font-medium">垃圾桶為空</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              被移至垃圾桶的檔案與合集將在此處保存
-            </p>
+            <p className="text-sm text-muted-foreground font-mono">無垃圾</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -249,9 +246,9 @@ export const TrashView: React.FC<TrashViewProps> = ({
                             loading="lazy"
                           />
                         ) : (
-                          <Layers className="h-8 w-8 text-muted-foreground/60" />
+                          <Layers className="h-8 w-8 text-muted-foreground" />
                         )}
-                        <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-sm bg-black/75 text-[10px] text-white font-mono flex items-center gap-1">
+                        <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[10px] text-foreground font-mono flex items-center gap-1">
                           <Layers className="h-3 w-3" />
                           <span>{col.item_count}</span>
                         </div>
@@ -393,7 +390,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
             </div>
           </DialogHeader>
 
-          <div className="py-3 text-xs text-foreground/90 space-y-2">
+          <div className="py-3 text-xs text-foreground space-y-2">
             <p>
               即將永久刪除垃圾桶內的 <span className="font-mono font-bold text-foreground">{totalItems}</span> 個項目（共釋放 <span className="font-mono font-bold text-foreground">{formatBytes(stats.totalBytes)}</span> 磁碟空間）。
             </p>
@@ -420,7 +417,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
               className="h-8 text-xs font-mono shadow-none"
               onClick={handleEmptyTrash}
             >
-              {isLoading ? '清空中...' : '確認永久清空'}
+              {isLoading ? '清空中...' : '清空'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -439,7 +436,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
             </div>
           </DialogHeader>
 
-          <div className="py-3 text-xs text-foreground/90">
+          <div className="py-3 text-xs text-foreground">
             確定要永久刪除「<span className="font-mono font-bold">{itemToDelete?.title}</span>」嗎？實體檔案與元數據將被徹底銷毀。
           </div>
 

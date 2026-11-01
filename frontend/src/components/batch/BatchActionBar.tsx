@@ -127,7 +127,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
   return (
     <>
       {/* Floating Toolbar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 sm:p-2 bg-card/95 border border-border rounded-sm shadow-none font-mono text-xs max-w-[96vw] overflow-x-auto select-none">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 sm:p-2 bg-card border border-border rounded-sm shadow-none font-mono text-xs max-w-[96vw] overflow-x-auto select-none">
         {/* Count badge */}
         <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-muted rounded-sm text-foreground shrink-0">
           <CheckSquare className="h-3.5 w-3.5 text-foreground" />
@@ -179,7 +179,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
           onClick={() => setCollectionModalOpen(true)}
         >
           <Layers className="h-3 w-3" />
-          <span>建立合集</span>
+          <span>合集</span>
         </Button>
 
         {/* Action: Move Directory */}
@@ -203,7 +203,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
           onClick={() => setTrashConfirmOpen(true)}
         >
           <Trash2 className="h-3 w-3" />
-          <span>移至垃圾桶</span>
+          <span>刪除</span>
         </Button>
 
         {/* Dismiss / Clear Selection */}
@@ -222,7 +222,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         <DialogContent className="max-w-md p-5 border border-border bg-card shadow-none font-mono">
           <DialogHeader className="pb-2 border-b border-border">
             <DialogTitle className="text-sm font-semibold text-foreground">
-              批量編輯標籤 ({selectedCount} 項)
+              標籤 ({selectedCount})
             </DialogTitle>
           </DialogHeader>
 
@@ -236,7 +236,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
                 onClick={() => setTagAction('add')}
               >
                 <Plus className="h-3 w-3" />
-                <span>附加標籤</span>
+                <span>新增</span>
               </Button>
               <Button
                 type="button"
@@ -246,20 +246,20 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
                 onClick={() => setTagAction('remove')}
               >
                 <Minus className="h-3 w-3" />
-                <span>移除標籤</span>
+                <span>移除</span>
               </Button>
             </div>
 
             <div>
               <label className="text-[11px] text-muted-foreground block mb-1">
-                標籤名稱（多個請用逗號分隔）
+                標籤（逗號分隔）
               </label>
               <input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTagSubmit()}
-                placeholder="例如: minimal, architecture, poster"
+                placeholder="minimal, architecture"
                 className="w-full h-8 px-2.5 text-xs bg-background border border-border rounded-sm text-foreground focus:outline-none focus:border-foreground"
               />
             </div>
@@ -267,7 +267,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
             {/* Quick tag chips */}
             {availableTags.length > 0 && (
               <div>
-                <span className="text-[10px] text-muted-foreground block mb-1">現有標籤點選：</span>
+                <span className="text-[10px] text-muted-foreground block mb-1">現有標籤:</span>
                 <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                   {availableTags.slice(0, 15).map((t) => (
                     <button
@@ -280,7 +280,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
                           setTagInput(parts.join(', '));
                         }
                       }}
-                      className="px-1.5 py-0.5 rounded-sm border border-border bg-muted text-[10px] text-foreground/80 hover:text-foreground hover:border-foreground/50 transition-none"
+                      className="px-1.5 py-0.5 rounded-sm border border-border bg-muted text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground transition-none"
                     >
                       #{t}
                     </button>
@@ -307,7 +307,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
               className="h-8 text-xs shadow-none"
               onClick={handleTagSubmit}
             >
-              {isProcessing ? '套用中' : '確認套用'}
+              {isProcessing ? '套用中' : '套用'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -318,25 +318,22 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         <DialogContent className="max-w-md p-5 border border-border bg-card shadow-none font-mono">
           <DialogHeader className="pb-2 border-b border-border">
             <DialogTitle className="text-sm font-semibold text-foreground">
-              以此 {selectedCount} 個項目建立合集
+              建立合集 ({selectedCount})
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-3 space-y-3">
             <div>
-              <label className="text-[11px] text-muted-foreground block mb-1">合集標題</label>
+              <label className="text-[11px] text-muted-foreground block mb-1">標題</label>
               <input
                 type="text"
                 value={collectionTitle}
                 onChange={(e) => setCollectionTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCollectionSubmit()}
-                placeholder="例如: 2026 年秋季建築寫真特輯"
+                placeholder="合集標題"
                 className="w-full h-8 px-2.5 text-xs bg-background border border-border rounded-sm text-foreground focus:outline-none focus:border-foreground"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              將保留選取之媒體並組裝為一組多對象混合合集，實體檔案不受破壞。
-            </p>
           </div>
 
           <DialogFooter className="flex items-center justify-end space-x-2 pt-3 border-t border-border">
@@ -356,7 +353,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
               className="h-8 text-xs shadow-none"
               onClick={handleCollectionSubmit}
             >
-              {isProcessing ? '建立中' : '確認建立'}
+              {isProcessing ? '建立中' : '建立'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -367,13 +364,13 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         <DialogContent className="max-w-md p-5 border border-border bg-card shadow-none font-mono">
           <DialogHeader className="pb-2 border-b border-border">
             <DialogTitle className="text-sm font-semibold text-foreground">
-              批量移動檔案 ({selectedCount} 項)
+              移動 ({selectedCount})
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-3 space-y-3">
             <div>
-              <label className="text-[11px] text-muted-foreground block mb-1">目標儲存庫</label>
+              <label className="text-[11px] text-muted-foreground block mb-1">儲存庫</label>
               <select
                 value={targetLibraryId || ''}
                 onChange={(e) => setTargetLibraryId(Number(e.target.value))}
@@ -388,13 +385,13 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
             </div>
 
             <div>
-              <label className="text-[11px] text-muted-foreground block mb-1">目標文件夾</label>
+              <label className="text-[11px] text-muted-foreground block mb-1">文件夾</label>
               <select
                 value={targetDirectory}
                 onChange={(e) => setTargetDirectory(e.target.value)}
                 className="w-full h-8 px-2 text-xs bg-background border border-border rounded-sm text-foreground"
               >
-                <option value="">(儲存庫根目錄)</option>
+                <option value="">(根目錄)</option>
                 {availableDirsForLib
                   .filter((d) => d.directory)
                   .map((d) => (
@@ -404,9 +401,6 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
                   ))}
               </select>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              原生媒體與 Sidecar 元數據將實體搬移至目標文件夾。
-            </p>
           </div>
 
           <DialogFooter className="flex items-center justify-end space-x-2 pt-3 border-t border-border">
@@ -426,7 +420,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
               className="h-8 text-xs shadow-none"
               onClick={handleMoveSubmit}
             >
-              {isProcessing ? '移動中' : '確認移動'}
+              {isProcessing ? '移動中' : '移動'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -437,16 +431,13 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         <DialogContent className="max-w-sm p-5 border border-border bg-card shadow-none font-mono">
           <DialogHeader className="pb-2 border-b border-border">
             <DialogTitle className="text-sm font-semibold text-foreground">
-              批量移至垃圾桶確認
+              確認刪除
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-3 text-xs text-foreground/90 space-y-2">
+          <div className="py-3 text-xs text-foreground space-y-2">
             <p>
-              確定將所選取的 <span className="font-bold">{selectedCount}</span> 個項目移至垃圾桶嗎？
-            </p>
-            <p className="text-muted-foreground text-[11px]">
-              檔案將移至庫根目錄下的 <span className="text-foreground">.zenbox/trash/</span> 隱藏安全隔離區，可隨時在垃圾桶中一鍵還原。
+              移至垃圾桶（共 {selectedCount} 項）？
             </p>
           </div>
 
@@ -468,7 +459,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
               className="h-8 text-xs shadow-none"
               onClick={handleTrashSubmit}
             >
-              {isProcessing ? '移動中' : '確認移入'}
+              {isProcessing ? '刪除中' : '刪除'}
             </Button>
           </DialogFooter>
         </DialogContent>

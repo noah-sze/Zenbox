@@ -432,8 +432,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card shrink-0">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <h2 className="text-xs uppercase font-bold tracking-wider text-foreground">新增資產</h2>
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <h2 className="text-xs uppercase font-bold tracking-wider text-foreground">新增</h2>
             </div>
 
             {/* Segmented Tab Switcher */}
@@ -449,7 +449,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 )}
               >
                 <LinkIcon className="h-3.5 w-3.5" />
-                <span>收集 (URL)</span>
+                <span>URL</span>
               </button>
 
               <button
@@ -463,7 +463,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 )}
               >
                 <UploadIcon className="h-3.5 w-3.5" />
-                <span>上傳 (檔案)</span>
+                <span>檔案</span>
               </button>
             </div>
           </div>
@@ -484,7 +484,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-card">
           {activeTab === 'collect' ? (
             /* -------------------------------------------------------- */
-            /* TAB 1: 收集 (URL COLLECTOR)                              */
+            /* TAB 1: 網址 (URL COLLECTOR)                              */
             /* -------------------------------------------------------- */
             <div className="flex-1 flex flex-col md:flex-row w-full h-full overflow-hidden">
               {/* Form Inputs (Left Column - 60%) */}
@@ -493,7 +493,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="collect-url" className="text-foreground font-bold flex items-center gap-1.5">
-                      <span>來源網址</span>
+                      <span>網址</span>
                       <span className="text-[10px] text-muted-foreground font-normal">HTTP / HTTPS</span>
                     </Label>
                     <button
@@ -505,7 +505,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                       }}
                       className="text-[10px] text-muted-foreground hover:text-foreground border border-border px-1.5 py-0.5 rounded-sm bg-secondary"
                     >
-                      填入範例
+                      範例
                     </button>
                   </div>
                   <Input
@@ -513,25 +513,25 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://x.com/... 或 https://example.com/article"
+                    placeholder="https://..."
                     className="h-9"
                   />
                 </div>
 
                 {/* Live URL Preview Card */}
                 {(isPreviewLoading || urlPreview) && (
-                  <div className="rounded-sm border border-border bg-secondary/50 p-3 space-y-2 font-mono text-xs shadow-none">
+                  <div className="rounded-sm border border-border bg-secondary p-3 space-y-2 font-mono text-xs shadow-none">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         {isPreviewLoading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                         ) : urlPreview?.type === 'bookmark' ? (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-emerald-600/40 text-emerald-400 bg-emerald-950/20">
-                            網頁書籤
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-border text-foreground bg-card">
+                            書籤
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-neutral-600/40 text-neutral-300 bg-neutral-900/30">
-                            直接檔案
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-border text-foreground bg-card">
+                            媒體
                           </Badge>
                         )}
                         {urlPreview?.domain && (
@@ -544,7 +544,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
 
                     {isPreviewLoading ? (
                       <div className="py-2 text-[11px] text-muted-foreground animate-pulse">
-                        正在解析網址元數據與快照...
+                        解析中...
                       </div>
                     ) : urlPreview ? (
                       <div className="flex gap-3 items-start pt-1">
@@ -575,26 +575,25 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 {/* Custom Title */}
                 <div className="space-y-1.5">
                   <Label htmlFor="collect-title">
-                    <span>資產標題</span>
-                    <span className="text-[10px] text-neutral-500 font-normal ml-1">（選填，預設提取）</span>
+                    <span>標題</span>
                   </Label>
                   <Input
                     id="collect-title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="自定義顯示標題"
+                    placeholder="自訂標題"
                   />
                 </div>
 
                 {/* Storage Locations (Library & Directory) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border">
                   <div className="space-y-1">
-                    <Label htmlFor="collect-library">存放儲存庫</Label>
+                    <Label htmlFor="collect-library">儲存庫</Label>
                     <select
                       id="collect-library"
                       value={libraryId}
                       onChange={(e) => setLibraryId(Number(e.target.value))}
-                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-neutral-500 shadow-none"
+                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-foreground shadow-none"
                     >
                       {libraries.map((lib) => (
                         <option key={lib.id} value={lib.id}>
@@ -605,12 +604,12 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="collect-directory">存放文件夾</Label>
+                    <Label htmlFor="collect-directory">文件夾</Label>
                     <select
                       id="collect-directory"
                       value={directory}
                       onChange={(e) => setDirectory(e.target.value)}
-                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-neutral-500 shadow-none"
+                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-foreground shadow-none"
                     >
                       <option value="">(根目錄 /)</option>
                       {directories
@@ -625,7 +624,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 </div>
 
                 {/* Tag Editor Section */}
-                <div className="space-y-2 pt-2 border-t border-border/60">
+                <div className="space-y-2 pt-2 border-t border-border">
                   <Label>標籤</Label>
                   <div className="flex flex-wrap gap-1.5 min-h-[26px]">
                     {tags.length > 0 ? (
@@ -646,7 +645,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-xs text-muted-foreground/60">無標籤</span>
+                      <span className="text-xs text-muted-foreground">無標籤</span>
                     )}
                   </div>
 
@@ -655,7 +654,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      placeholder="標籤名稱 (按 Enter 新增)"
+                      placeholder="新增標籤"
                       className="h-7 text-[11px]"
                     />
                     <Button
@@ -678,7 +677,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                           key={st.name}
                           type="button"
                           onClick={() => handleAddSuggestedTag(st.name)}
-                          className="px-1.5 py-0.5 text-[10px] font-mono rounded-sm border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                          className="px-1.5 py-0.5 text-[10px] font-mono rounded-sm border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground"
                         >
                           +{st.name}
                         </button>
@@ -687,9 +686,9 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   )}
                 </div>
 
-                {/* Objective Notes */}
-                <div className="space-y-1.5 pt-2 border-t border-border/60">
-                  <Label htmlFor="collect-notes">客觀備註</Label>
+                {/* Notes */}
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <Label htmlFor="collect-notes">備註</Label>
                   <Textarea
                     id="collect-notes"
                     value={notes}
@@ -705,15 +704,15 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      即時解析預覽
+                      預覽
                     </span>
-                    <span className="px-1.5 py-0.5 rounded-sm bg-accent border border-border text-[10px] text-foreground">
-                      {url.trim() ? '就緒' : '待輸入'}
+                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary border border-border text-[10px] text-foreground">
+                      {url.trim() ? '就緒' : '無'}
                     </span>
                   </div>
 
                   {/* Aspect-Ratio Preview Container */}
-                  <div className="relative w-full aspect-[4/3] rounded-sm border border-border bg-card overflow-hidden flex items-center justify-center">
+                  <div className="relative w-full aspect-[4/3] rounded-sm border border-border bg-secondary overflow-hidden flex items-center justify-center">
                     {isDirectImageUrl ? (
                       <img
                         src={url}
@@ -725,14 +724,14 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center p-4 text-center">
-                        <LinkIcon className="h-6 w-6 text-muted-foreground/60 mb-1" />
+                        <LinkIcon className="h-6 w-6 text-muted-foreground mb-1" />
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          {detectedDomain || '等待輸入 URL'}
+                          {detectedDomain || '無網址'}
                         </span>
                       </div>
                     )}
                     {detectedDomain && (
-                      <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[9px] text-white">
+                      <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-sm bg-card border border-border text-[9px] text-foreground">
                         {detectedDomain}
                       </div>
                     )}
@@ -741,15 +740,15 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   {/* Technical Spec Grid */}
                   <div className="space-y-2 pt-1 text-[11px] text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">來源網域</span>
+                      <span className="text-muted-foreground">網域</span>
                       <span className="text-foreground truncate max-w-[160px]">
                         {detectedDomain || '-'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">傳輸協定</span>
+                      <span className="text-muted-foreground">協定</span>
                       <span className="text-foreground">
-                        {url.startsWith('https://') ? 'HTTPS / TLS 1.3' : url.startsWith('http://') ? 'HTTP' : '-'}
+                        {url.startsWith('https://') ? 'HTTPS' : url.startsWith('http://') ? 'HTTP' : '-'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -759,8 +758,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-sm border border-border bg-muted/40 text-[10px] text-muted-foreground leading-normal">
-                  收錄後將非同步下載原檔儲存至 <code className="text-foreground font-mono">/storage/originals</code>，並生成 Sidecar 元數據伴隨文件。
+                <div className="p-2.5 rounded-sm border border-border bg-secondary text-[10px] text-muted-foreground leading-normal">
+                  檔案將儲存至 <code className="text-foreground font-mono">/storage/originals</code> 並生成 Sidecar JSON。
                 </div>
               </div>
             </div>
@@ -773,17 +772,17 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
               <div className="flex-1 overflow-y-auto p-5 space-y-4 border-b md:border-b-0 md:border-r border-border">
                 {/* Drag and Drop Zone */}
                 <div className="space-y-1.5">
-                  <Label>選擇本機檔案</Label>
+                  <Label>檔案</Label>
                   <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
-                      'relative border border-dashed rounded-sm p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-muted/20 group',
+                      'relative border border-dashed rounded-sm p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-secondary/0 group',
                       isDragging
                         ? 'border-foreground bg-accent'
-                        : 'border-border hover:border-foreground/50'
+                        : 'border-border hover:border-foreground'
                     )}
                   >
                     <input
@@ -793,12 +792,12 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                       className="hidden"
                       onChange={handleFileInputChange}
                     />
-                    <div className="w-10 h-10 rounded-sm border border-border bg-secondary flex items-center justify-center text-muted-foreground group-hover:text-foreground group-hover:border-foreground/30 mb-2">
+                    <div className="w-10 h-10 rounded-sm border border-border bg-secondary flex items-center justify-center text-muted-foreground group-hover:text-foreground group-hover:border-foreground mb-2">
                       <UploadIcon className="h-5 w-5" />
                     </div>
-                    <div className="text-xs text-foreground font-medium">拖曳檔案至此，或點擊瀏覽選取</div>
+                    <div className="text-xs text-foreground font-medium">拖曳檔案至此，或點擊選取</div>
                     <div className="text-[10px] text-muted-foreground mt-1">
-                      支援全格式文檔、代碼、壓縮包、圖片與影片
+                      支援各類格式文件
                     </div>
                   </div>
                 </div>
@@ -807,13 +806,13 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 {selectedFiles.length > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>待上傳清單 ({selectedFiles.length})</span>
+                      <span>待上傳 ({selectedFiles.length})</span>
                       <button
                         type="button"
                         onClick={() => setSelectedFiles([])}
                         className="text-[10px] text-muted-foreground hover:text-foreground"
                       >
-                        清空全部
+                        清空
                       </button>
                     </div>
 
@@ -868,7 +867,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                         />
                         <span className="font-semibold flex items-center gap-1.5">
                           <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                          打包為多模態合集
+                          打包為合集
                         </span>
                       </label>
                       <Badge variant="outline" className="text-[10px] py-0 px-1 border-border text-muted-foreground">
@@ -885,7 +884,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                           id="upload-collection-title"
                           value={collectionTitle}
                           onChange={(e) => setCollectionTitle(e.target.value)}
-                          placeholder={selectedFiles[0] ? selectedFiles[0].name.replace(/\.[^/.]+$/, '') : '輸入合集標題...'}
+                          placeholder={selectedFiles[0] ? selectedFiles[0].name.replace(/\.[^/.]+$/, '') : '合集標題'}
                           className="h-8 text-xs font-mono bg-card border-border"
                         />
                       </div>
@@ -894,14 +893,14 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 )}
 
                 {/* Storage Locations (Library & Directory) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border">
                   <div className="space-y-1">
-                    <Label htmlFor="upload-library">存放儲存庫</Label>
+                    <Label htmlFor="upload-library">儲存庫</Label>
                     <select
                       id="upload-library"
                       value={libraryId}
                       onChange={(e) => setLibraryId(Number(e.target.value))}
-                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-neutral-500 shadow-none"
+                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-foreground shadow-none"
                     >
                       {libraries.map((lib) => (
                         <option key={lib.id} value={lib.id}>
@@ -912,12 +911,12 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="upload-directory">存放文件夾</Label>
+                    <Label htmlFor="upload-directory">文件夾</Label>
                     <select
                       id="upload-directory"
                       value={directory}
                       onChange={(e) => setDirectory(e.target.value)}
-                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-neutral-500 shadow-none"
+                      className="flex h-8 w-full rounded-sm border border-border bg-card px-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-foreground shadow-none"
                     >
                       <option value="">(根目錄 /)</option>
                       {directories
@@ -932,8 +931,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 </div>
 
                 {/* Tag Editor Section */}
-                <div className="space-y-2 pt-2 border-t border-border/60">
-                  <Label>批次套用標籤</Label>
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <Label>標籤</Label>
                   <div className="flex flex-wrap gap-1.5 min-h-[26px]">
                     {tags.length > 0 ? (
                       tags.map((tag) => (
@@ -953,7 +952,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-xs text-muted-foreground/60">無標籤</span>
+                      <span className="text-xs text-muted-foreground">無標籤</span>
                     )}
                   </div>
 
@@ -962,7 +961,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      placeholder="標籤名稱 (按 Enter 新增)"
+                      placeholder="新增標籤"
                       className="h-7 text-[11px]"
                     />
                     <Button
@@ -978,9 +977,9 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Objective Notes */}
-                <div className="space-y-1.5 pt-2 border-t border-border/60">
-                  <Label htmlFor="upload-notes">客觀備註</Label>
+                {/* Notes */}
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <Label htmlFor="upload-notes">備註</Label>
                   <Textarea
                     id="upload-notes"
                     value={notes}
@@ -996,25 +995,25 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      待處理資產規範
+                      規格
                     </span>
-                    <span className="px-1.5 py-0.5 rounded-sm bg-accent border border-border text-[10px] text-foreground">
-                      原真性保護
+                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary border border-border text-[10px] text-foreground">
+                      檔案
                     </span>
                   </div>
 
                   <div className="space-y-2 pt-1 text-[11px] text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <span>待上傳數量</span>
-                      <span className="text-foreground font-mono">{selectedFiles.length} 個檔案</span>
+                      <span>數量</span>
+                      <span className="text-foreground font-mono">{selectedFiles.length} 件</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>總檔案大小</span>
+                      <span>大小</span>
                       <span className="text-foreground font-mono">{formatFileSize(totalUploadSize)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>處理佇列管線</span>
-                      <span className="text-foreground">Sharp WebP (sm/md)</span>
+                      <span>處理佇列</span>
+                      <span className="text-foreground">Sharp WebP</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>指紋雜湊</span>
@@ -1029,8 +1028,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-sm border border-border bg-muted/50 text-[10px] text-muted-foreground leading-normal">
-                  原始檔案二進制唯讀不可變，將完整保留於原生檔案系統，元數據寫入同級 <code className="text-foreground font-mono">.zenbox/</code> Sidecar。
+                <div className="p-2.5 rounded-sm border border-border bg-secondary text-[10px] text-muted-foreground leading-normal">
+                  檔案將儲存至原生檔案系統，元數據寫入 Sidecar JSON。
                 </div>
               </div>
             </div>
@@ -1046,18 +1045,18 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
               className={cn(
                 'w-1.5 h-1.5 rounded-full',
                 (activeTab === 'collect' && url.trim()) || (activeTab === 'upload' && selectedFiles.length > 0)
-                  ? 'bg-emerald-500'
-                  : 'bg-muted-foreground/40'
+                  ? 'bg-foreground'
+                  : 'bg-muted-foreground opacity-40'
               )}
             />
             <span>
               {activeTab === 'collect'
                 ? url.trim()
-                  ? '來源網址已就緒'
-                  : '等待輸入來源網址'
+                  ? '已就緒'
+                  : '無網址'
                 : selectedFiles.length > 0
-                ? `${selectedFiles.length} 個檔案待上傳 (${formatFileSize(totalUploadSize)})`
-                : '請選取欲上傳之檔案'}
+                ? `${selectedFiles.length} 件 (${formatFileSize(totalUploadSize)})`
+                : '無檔案'}
             </span>
           </div>
 
@@ -1087,12 +1086,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
               <Check className="h-3.5 w-3.5" />
               <span>
                 {isSubmitting
-                  ? activeTab === 'collect'
-                    ? '收錄中...'
-                    : '上傳中...'
-                  : activeTab === 'collect'
-                  ? '收錄'
-                  : '上傳'}
+                  ? '處理中...'
+                  : '新增'}
               </span>
             </Button>
           </div>

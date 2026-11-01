@@ -335,7 +335,7 @@ export const SidebarHeader = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="header"
-      className={cn('flex flex-col gap-2 p-3 border-b border-border/80', className)}
+      className={cn('flex flex-col gap-2 p-3 border-b border-sidebar-border', className)}
       {...props}
     />
   );
@@ -350,7 +350,7 @@ export const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn('flex flex-col gap-2 p-3 mt-auto border-t border-border/80', className)}
+      className={cn('flex flex-col gap-2 p-3 mt-auto border-t border-sidebar-border', className)}
       {...props}
     />
   );

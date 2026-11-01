@@ -1,7 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem } from '@/types/media';
 import { Badge } from '@/components/ui/badge';
-import { Film, Check } from 'lucide-react';
+import {
+  Film,
+  Check,
+  FileText,
+  FileCode,
+  FileSpreadsheet,
+  Archive,
+  File,
+  Music,
+  Globe,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MediaCardProps {
@@ -28,11 +38,37 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  const isBookmarkItem = item.mime_type === 'application/x-url' || item.filename.endsWith('.url') || item.filename.endsWith('.webloc');
+  const hasSnapshot = isBookmarkItem && item.width > 0 && item.height > 0;
   const isImage = item.mime_type.startsWith('image/');
   const isVideo = item.mime_type.startsWith('video/');
-  const isVisual = isImage || isVideo;
+  const isVisual = isImage || isVideo || hasSnapshot;
+  const ext = ('.' + (item.filename.split('.').pop() || '')).toLowerCase();
   const thumbnailUrl = `/api/media/${item.id}/thumbnail?size=sm`;
   const rawVideoUrl = `/api/media/${item.id}/raw`;
+
+  const getDocumentIcon = (extension: string, mime: string) => {
+    if (['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown', '.rtf', '.epub'].includes(extension)) {
+      return <FileText className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (['.xls', '.xlsx', '.csv'].includes(extension)) {
+      return <FileSpreadsheet className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
+      return <Archive className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (
+      ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.json', '.html', '.css', '.sh', '.bash'].includes(
+        extension
+      )
+    ) {
+      return <FileCode className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (mime.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.ogg', '.m4a'].includes(extension)) {
+      return <Music className="h-6 w-6 stroke-[1.5]" />;
+    }
+    return <File className="h-6 w-6 stroke-[1.5]" />;
+  };
 
   // Format file size in KB or MB
   const formatSize = (bytes: number): string => {
@@ -194,23 +230,43 @@ export const MediaCard: React.FC<MediaCardProps> = ({
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center p-3 text-center">
-            <div className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground mb-1.5">
-              <span className="text-[9px] uppercase font-mono">{item.filename.split('.').pop()}</span>
+          <div className="flex flex-col items-center justify-center p-4 text-center w-full h-full select-none">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="h-11 w-11 rounded-sm border border-border bg-card flex items-center justify-center text-foreground group-hover:border-foreground/40 transition-colors">
+                {isBookmarkItem ? <Globe className="h-6 w-6 stroke-[1.5]" /> : getDocumentIcon(ext, item.mime_type)}
+              </div>
+              <span className="px-2 py-0.5 rounded-sm bg-secondary text-[10px] font-mono font-bold tracking-widest uppercase border border-border text-foreground">
+                {isBookmarkItem ? 'URL' : (ext.replace('.', '') || 'FILE')}
+              </span>
             </div>
-            <span className="text-xs font-semibold text-foreground truncate max-w-[160px]">
-              {item.title}
+            <span className="text-xs font-medium text-foreground truncate max-w-[85%] mt-2.5">
+              {item.title || item.filename}
             </span>
+            {isBookmarkItem && item.bookmark?.domain && (
+              <span className="text-[10px] text-muted-foreground truncate max-w-[80%] mt-0.5">
+                {item.bookmark.domain}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Video Icon Badge (top-left) */}
-        {isVideo && (
+        {/* Media Type Badge (top-left) */}
+        {isVideo ? (
           <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
             <Film className="h-3 w-3" />
             <span>影片</span>
           </div>
-        )}
+        ) : isBookmarkItem ? (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
+            <Globe className="h-3 w-3" />
+            <span className="truncate max-w-[120px]">{item.bookmark?.domain || '書籤'}</span>
+          </div>
+        ) : !isVisual ? (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[10px] font-mono text-white flex items-center gap-1 z-20">
+            <FileText className="h-3 w-3" />
+            <span>文件</span>
+          </div>
+        ) : null}
 
         {/* Duration / Resolution indicator tag (bottom-right of preview) */}
         {isVideo && item.duration > 0 ? (
@@ -227,7 +283,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       {/* Metadata & Tag Footer */}
       <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 sm:space-y-2 border-t border-border bg-card">
         <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground gap-1">
-          <span className="truncate max-w-[80px] sm:max-w-[120px] font-mono">{formatSize(item.file_size)}</span>
+          <span className="truncate max-w-[80px] sm:max-w-[120px] font-mono">
+            {isBookmarkItem ? (item.bookmark?.domain || '書籤') : formatSize(item.file_size)}
+          </span>
           <span className="font-mono shrink-0">{formatDate(item.added_at)}</span>
         </div>
 

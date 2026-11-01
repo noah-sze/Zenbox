@@ -50,6 +50,8 @@ export const Header: React.FC<HeaderProps> = ({
   const getRootLabel = () => {
     if (mediaTypeFilter === 'image') return '圖片';
     if (mediaTypeFilter === 'video') return '影片';
+    if (mediaTypeFilter === 'document') return '文件';
+    if (mediaTypeFilter === 'bookmark') return '書籤';
     if (mediaTypeFilter === 'collection') return '合集';
     if (mediaTypeFilter === 'trash') return '垃圾桶';
     return '全部媒體';
@@ -131,6 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Create / Collect Asset Trigger */}
           {onOpenCreateAsset && (
             <button
+              id="header-create-asset-btn"
               type="button"
               onClick={onOpenCreateAsset}
               className="flex items-center space-x-1.5 h-8 px-2.5 rounded-sm bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors shadow-none select-none"

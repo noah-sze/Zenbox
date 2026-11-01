@@ -19,6 +19,14 @@ import {
   Check,
   Plus,
   Layers,
+  Download,
+  FileText,
+  FileCode,
+  FileSpreadsheet,
+  Archive,
+  File,
+  Music,
+  Globe,
 } from 'lucide-react';
 import { VideoPlayer } from './VideoPlayer';
 
@@ -240,10 +248,36 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
     ? libraries.find((l) => l.id === item.library_id)?.name
     : undefined;
 
-  const isImage = item.mime_type.startsWith('image/');
+  const isBookmarkItem = item.mime_type === 'application/x-url' || item.filename.endsWith('.url') || item.filename.endsWith('.webloc');
+  const hasSnapshot = isBookmarkItem && item.width > 0 && item.height > 0;
+  const isImage = item.mime_type.startsWith('image/') || hasSnapshot;
   const isVideo = item.mime_type.startsWith('video/');
+  const ext = ('.' + (item.filename.split('.').pop() || '')).toLowerCase();
   const previewUrl = `/api/media/${item.id}/thumbnail?size=md`;
   const rawUrl = `/api/media/${item.id}/raw`;
+
+  const getDocumentIcon = (extension: string, mime: string) => {
+    if (['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown', '.rtf', '.epub'].includes(extension)) {
+      return <FileText className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (['.xls', '.xlsx', '.csv'].includes(extension)) {
+      return <FileSpreadsheet className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
+      return <Archive className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (
+      ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.json', '.html', '.css', '.sh', '.bash'].includes(
+        extension
+      )
+    ) {
+      return <FileCode className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (mime.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.ogg', '.m4a'].includes(extension)) {
+      return <Music className="h-8 w-8 stroke-[1.5]" />;
+    }
+    return <File className="h-8 w-8 stroke-[1.5]" />;
+  };
 
   const formatSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -286,15 +320,83 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
             />
           ) : isVideo ? (
             <VideoPlayer key={item.id} item={item} autoPlay />
+          ) : isBookmarkItem ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
+              <div className="h-16 w-16 rounded-sm border border-border bg-card flex items-center justify-center text-foreground mb-3">
+                <Globe className="h-8 w-8 stroke-[1.5]" />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-sm bg-secondary text-xs font-mono font-bold tracking-widest uppercase border border-border text-foreground mb-2">
+                URL 書籤
+              </span>
+              <span className="text-sm font-semibold text-foreground break-all mb-1">
+                {item.title || item.filename}
+              </span>
+              {item.bookmark?.domain && (
+                <span className="text-xs text-muted-foreground font-mono mb-6">
+                  {item.bookmark.domain}
+                </span>
+              )}
+
+              <div className="flex items-center gap-2">
+                {item.source_url && (
+                  <a
+                    href={item.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 h-9 px-4 rounded-sm border border-foreground bg-foreground text-background text-xs font-medium hover:bg-neutral-200 transition-colors shadow-none select-none"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>開啟網址</span>
+                  </a>
+                )}
+                <a
+                  href={`${rawUrl}?download=1`}
+                  download={item.filename}
+                  className="flex items-center space-x-2 h-9 px-3 rounded-sm border border-border bg-card text-xs font-medium text-foreground hover:bg-neutral-800 transition-colors shadow-none select-none"
+                  title="下載快捷檔"
+                >
+                  <Download className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <span className="text-sm uppercase text-muted-foreground">{item.mime_type}</span>
-              <span className="mt-2 text-base font-semibold">{item.filename}</span>
+            <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
+              <div className="h-16 w-16 rounded-sm border border-border bg-card flex items-center justify-center text-foreground mb-3">
+                {getDocumentIcon(ext, item.mime_type)}
+              </div>
+              <span className="px-2.5 py-0.5 rounded-sm bg-secondary text-xs font-mono font-bold tracking-widest uppercase border border-border text-foreground mb-2">
+                {ext.replace('.', '') || 'FILE'}
+              </span>
+              <span className="text-sm font-semibold text-foreground break-all mb-1">
+                {item.filename}
+              </span>
+              <span className="text-xs text-muted-foreground font-mono mb-6">
+                {formatSize(item.file_size)} · {item.mime_type}
+              </span>
+
+              <a
+                href={`${rawUrl}?download=1`}
+                download={item.filename}
+                className="flex items-center space-x-2 h-9 px-4 rounded-sm border border-border bg-card text-xs font-medium text-foreground hover:bg-neutral-800 hover:border-foreground/40 transition-colors shadow-none select-none"
+              >
+                <Download className="h-4 w-4" />
+                <span>下載原檔</span>
+              </a>
             </div>
           )}
 
-          {/* Quick open raw link (shown on images) */}
-          {isImage && (
+          {/* Quick open URL link or raw link */}
+          {isBookmarkItem && item.source_url ? (
+            <a
+              href={item.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-3 right-3 px-2 py-1 rounded-sm bg-black/80 border border-border text-[11px] text-neutral-300 hover:text-white flex items-center space-x-1"
+            >
+              <ExternalLink className="h-3 w-3" />
+              <span>開啟網址</span>
+            </a>
+          ) : isImage ? (
             <a
               href={rawUrl}
               target="_blank"
@@ -304,7 +406,7 @@ export const MediaDetailDialog: React.FC<MediaDetailDialogProps> = ({
               <Maximize2 className="h-3 w-3" />
               <span>原檔</span>
             </a>
-          )}
+          ) : null}
         </div>
 
         {/* Sidecar Metadata Panel */}

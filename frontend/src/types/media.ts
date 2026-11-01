@@ -1,3 +1,11 @@
+export interface BookmarkMeta {
+  url: string;
+  domain?: string;
+  description?: string;
+  favicon?: string;
+  hasSnapshot?: boolean;
+}
+
 export interface MediaItem {
   id: number;
   library_id?: number;
@@ -17,6 +25,7 @@ export interface MediaItem {
   added_at: string;
   updated_at: string;
   tags: string[];
+  bookmark?: BookmarkMeta;
   collection_id?: number | null;
   collection_order?: number | null;
   is_trashed?: number;
@@ -24,6 +33,10 @@ export interface MediaItem {
   original_relative_path?: string;
   original_directory?: string;
 }
+
+export const isBookmark = (item: MediaItem): boolean => {
+  return item.mime_type === 'application/x-url' || item.filename.endsWith('.url') || item.filename.endsWith('.webloc');
+};
 
 export interface CollectionItem extends MediaItem {
   sort_order?: number;

@@ -53,7 +53,7 @@ export class MediaManageService {
     let rawFilename = path.basename(parsedUrl.pathname);
     let ext = path.extname(rawFilename).toLowerCase();
 
-    if (!ext || !CONFIG.SUPPORTED_EXTENSIONS.has(ext)) {
+    if (!ext || CONFIG.IGNORED_EXTENSIONS.has(ext)) {
       if (contentType.includes('image/jpeg')) ext = '.jpg';
       else if (contentType.includes('image/png')) ext = '.png';
       else if (contentType.includes('image/webp')) ext = '.webp';
@@ -63,7 +63,10 @@ export class MediaManageService {
       else if (contentType.includes('video/mp4')) ext = '.mp4';
       else if (contentType.includes('video/webm')) ext = '.webm';
       else if (contentType.includes('video/quicktime')) ext = '.mov';
-      else ext = '.jpg';
+      else if (contentType.includes('application/pdf')) ext = '.pdf';
+      else if (contentType.includes('text/markdown')) ext = '.md';
+      else if (contentType.includes('text/plain')) ext = '.txt';
+      else ext = ext || '.bin';
 
       const baseName = options.title
         ? options.title.trim().replace(/[^\w.-]/g, '_')
@@ -102,7 +105,7 @@ export class MediaManageService {
     const safeBase = path.basename(rawFilename).replace(/[^\w.-]/g, '_');
     const ext = path.extname(safeBase).toLowerCase();
 
-    if (!CONFIG.SUPPORTED_EXTENSIONS.has(ext)) {
+    if (CONFIG.IGNORED_EXTENSIONS.has(ext) || CONFIG.IGNORED_FILENAMES.has(safeBase.toLowerCase())) {
       throw new Error(`不支援的檔案類型: ${ext}`);
     }
 
@@ -145,20 +148,8 @@ export class MediaManageService {
     };
     await writeSidecar(targetPath, sidecarData);
 
-    // 4. Register in SQLite
-    const mimeMap: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.webp': 'image/webp',
-      '.gif': 'image/gif',
-      '.avif': 'image/avif',
-      '.svg': 'image/svg+xml',
-      '.mp4': 'video/mp4',
-      '.mov': 'video/quicktime',
-      '.webm': 'video/webm'
-    };
-    const mimeType = mimeMap[ext] || 'application/octet-stream';
+    // 4. Register in SQLite with dynamic MIME detection
+    const mimeType = CONFIG.detectMimeType(finalFilename);
 
     const insertResult = DbClient.execute(
       `INSERT INTO media (

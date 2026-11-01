@@ -284,7 +284,7 @@ export const App: React.FC = () => {
     setActiveDirectory(createdDir.directory);
   };
 
-  // Filter items by mediaType (all, image, video)
+  // Filter items by mediaType (all, image, video, document, bookmark)
   const displayedItems = useMemo(() => {
     if (mediaTypeFilter === 'image') {
       return items.filter((item) => item.mime_type.startsWith('image/'));
@@ -292,8 +292,46 @@ export const App: React.FC = () => {
     if (mediaTypeFilter === 'video') {
       return items.filter((item) => item.mime_type.startsWith('video/'));
     }
+    if (mediaTypeFilter === 'document') {
+      return items.filter(
+        (item) =>
+          !item.mime_type.startsWith('image/') &&
+          !item.mime_type.startsWith('video/') &&
+          item.mime_type !== 'application/x-url' &&
+          !item.filename.endsWith('.url') &&
+          !item.filename.endsWith('.webloc')
+      );
+    }
+    if (mediaTypeFilter === 'bookmark') {
+      return items.filter(
+        (item) =>
+          item.mime_type === 'application/x-url' ||
+          item.filename.endsWith('.url') ||
+          item.filename.endsWith('.webloc')
+      );
+    }
     return items;
   }, [items, mediaTypeFilter]);
+
+  const documentCount = useMemo(() => {
+    return items.filter(
+      (item) =>
+        !item.mime_type.startsWith('image/') &&
+        !item.mime_type.startsWith('video/') &&
+        item.mime_type !== 'application/x-url' &&
+        !item.filename.endsWith('.url') &&
+        !item.filename.endsWith('.webloc')
+    ).length;
+  }, [items]);
+
+  const bookmarkCount = useMemo(() => {
+    return items.filter(
+      (item) =>
+        item.mime_type === 'application/x-url' ||
+        item.filename.endsWith('.url') ||
+        item.filename.endsWith('.webloc')
+    ).length;
+  }, [items]);
 
   // Multi-select handlers
   const handleToggleSelectMedia = useCallback(
@@ -344,7 +382,11 @@ export const App: React.FC = () => {
         e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
       if (isInput) return;
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        setCreateAssetTab('collect');
+        setIsCreateAssetOpen(true);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
         if (displayedItems.length > 0 && mediaTypeFilter !== 'trash') {
           e.preventDefault();
           handleSelectAll();
@@ -493,8 +535,8 @@ export const App: React.FC = () => {
           handleClearSelection();
           setMediaTypeFilter(type);
         }}
-        isSyncing={isSyncing}
-        onTriggerSync={handleTriggerSync}
+        documentCount={documentCount}
+        bookmarkCount={bookmarkCount}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 

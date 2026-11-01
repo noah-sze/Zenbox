@@ -6,6 +6,14 @@ import { execFile } from 'node:child_process';
 
 export const ZENBOX_DIR_NAME = '.zenbox';
 
+export interface BookmarkMeta {
+  url: string;
+  domain?: string;
+  description?: string;
+  favicon?: string;
+  hasSnapshot?: boolean;
+}
+
 export interface SidecarData {
   title?: string;
   tags: string[];
@@ -13,6 +21,7 @@ export interface SidecarData {
   sourceUrl?: string;
   notes?: string;
   hash?: string;
+  bookmark?: BookmarkMeta;
   collection?: {
     id: string;
     title?: string;

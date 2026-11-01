@@ -259,14 +259,30 @@ export class ThumbnailService {
   ): Promise<string | null> {
     await this.init();
 
-    const isProcessable = media.mime_type.startsWith('image/') || media.mime_type.startsWith('video/');
-    if (!isProcessable) {
-      return null;
-    }
-
     const thumbPath = this.getThumbnailPath(media, size);
     if (existsSync(thumbPath)) {
       return thumbPath;
+    }
+
+    // Bookmark snapshot recovery from .zenbox/*.preview.webp
+    if (media.mime_type === 'application/x-url' || media.filename.endsWith('.url')) {
+      const dir = path.dirname(media.filepath);
+      const filename = path.basename(media.filepath);
+      const snapshotPath = path.join(dir, '.zenbox', `${filename}.preview.webp`);
+      if (existsSync(snapshotPath)) {
+        try {
+          await this.generateSingle(snapshotPath, thumbPath, size);
+          return thumbPath;
+        } catch (err) {
+          console.warn(`[Thumbnail] Failed generating snapshot thumbnail for ${media.filename}:`, err);
+        }
+      }
+      return null;
+    }
+
+    const isProcessable = media.mime_type.startsWith('image/') || media.mime_type.startsWith('video/');
+    if (!isProcessable) {
+      return null;
     }
 
     // Cache missing (cleared or new item): generate on-demand via queue

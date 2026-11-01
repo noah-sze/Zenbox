@@ -1,7 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { Collection, MediaItem } from '@/types/media';
 import { Badge } from '@/components/ui/badge';
-import { Layers, Film, Image as ImageIcon } from 'lucide-react';
+import {
+  Layers,
+  Film,
+  Image as ImageIcon,
+  FileText,
+  FileCode,
+  FileSpreadsheet,
+  Archive,
+  File,
+  Music,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CollectionCardProps {
@@ -46,11 +56,37 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
     }
   };
 
+  const getDocumentIcon = (extension: string, mime: string) => {
+    if (['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown', '.rtf', '.epub'].includes(extension)) {
+      return <FileText className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (['.xls', '.xlsx', '.csv'].includes(extension)) {
+      return <FileSpreadsheet className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
+      return <Archive className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (
+      ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.json', '.html', '.css', '.sh', '.bash'].includes(
+        extension
+      )
+    ) {
+      return <FileCode className="h-6 w-6 stroke-[1.5]" />;
+    }
+    if (mime.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.ogg', '.m4a'].includes(extension)) {
+      return <Music className="h-6 w-6 stroke-[1.5]" />;
+    }
+    return <File className="h-6 w-6 stroke-[1.5]" />;
+  };
+
+  const docCount = Math.max(0, collection.item_count - collection.image_count - collection.video_count);
+
   // Mixed media count breakdown
   const countLabel = (() => {
     const parts: string[] = [];
     if (collection.image_count > 0) parts.push(`${collection.image_count} 圖`);
     if (collection.video_count > 0) parts.push(`${collection.video_count} 片`);
+    if (docCount > 0) parts.push(`${docCount} 文`);
     if (parts.length === 0) return `${collection.item_count} 項目`;
     return `${collection.item_count} 項目 (${parts.join(' · ')})`;
   })();
@@ -83,6 +119,13 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
     setHoverIndex(0);
   };
 
+  const activeIsImage = activeItem ? activeItem.mime_type.startsWith('image/') : false;
+  const activeIsVideo = activeItem ? activeItem.mime_type.startsWith('video/') : false;
+  const activeIsVisual = activeIsImage || activeIsVideo;
+  const activeExt = activeItem
+    ? ('.' + (activeItem.filename.split('.').pop() || '')).toLowerCase()
+    : '';
+
   const thumbnailUrl = activeItem
     ? `/api/media/${activeItem.id}/thumbnail?size=sm`
     : '';
@@ -105,12 +148,28 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
         className="relative w-full overflow-hidden bg-secondary flex items-center justify-center min-h-[100px] sm:min-h-[130px]"
       >
         {activeItem ? (
-          <img
-            src={thumbnailUrl}
-            alt={collection.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-opacity duration-150"
-          />
+          activeIsVisual ? (
+            <img
+              src={thumbnailUrl}
+              alt={collection.title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-opacity duration-150"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-4 text-center w-full h-full select-none bg-card">
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <div className="h-11 w-11 rounded-sm border border-border bg-secondary flex items-center justify-center text-foreground group-hover:border-foreground/40 transition-colors">
+                  {getDocumentIcon(activeExt, activeItem.mime_type)}
+                </div>
+                <span className="px-2 py-0.5 rounded-sm bg-secondary text-[10px] font-mono font-bold tracking-widest uppercase border border-border text-foreground">
+                  {activeExt.replace('.', '') || 'FILE'}
+                </span>
+              </div>
+              <span className="text-xs font-medium text-foreground truncate max-w-[85%] mt-2">
+                {activeItem.title || activeItem.filename}
+              </span>
+            </div>
+          )
         ) : (
           <div className="flex flex-col items-center justify-center p-3 text-center text-muted-foreground">
             <Layers className="h-6 w-6 mb-1 text-neutral-500" />
@@ -127,15 +186,20 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
         {/* Top-right: Active item type badge when scrubbing */}
         {activeItem && isScrubbing && (
           <div className="absolute top-2 right-5 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-300 flex items-center gap-1 z-20">
-            {activeItem.mime_type.startsWith('video/') ? (
+            {activeIsVideo ? (
               <>
                 <Film className="h-2.5 w-2.5" />
                 <span>片 {hoverIndex + 1}/{previewItems.length}</span>
               </>
-            ) : (
+            ) : activeIsImage ? (
               <>
                 <ImageIcon className="h-2.5 w-2.5" />
                 <span>圖 {hoverIndex + 1}/{previewItems.length}</span>
+              </>
+            ) : (
+              <>
+                <FileText className="h-2.5 w-2.5" />
+                <span>文 {hoverIndex + 1}/{previewItems.length}</span>
               </>
             )}
           </div>

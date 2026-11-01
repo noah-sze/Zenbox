@@ -21,6 +21,8 @@ import {
   UpdateCollectionPayload,
   ListCollectionsQuery,
 } from './services/collectionService.js';
+import { UrlCollectorService } from './services/urlCollectorService.js';
+import { readSidecar } from './watcher/sidecar.js';
 
 const app = new Hono();
 const watcherManager = new LibraryWatcherManager();
@@ -219,7 +221,7 @@ app.post('/api/directories', async (c) => {
 });
 
 // Get media items with library, directory, keyword, sorting, and tag filtering
-app.get('/api/media', (c) => {
+app.get('/api/media', async (c) => {
   const libraryId = c.req.query('libraryId') ? Number(c.req.query('libraryId')) : undefined;
   const tagQuery = c.req.query('tags');
   const dirQuery = c.req.query('dir'); // e.g. "2026/architecture" or "" for root
@@ -279,6 +281,17 @@ app.get('/api/media', (c) => {
     queryParams.push(likePattern, likePattern, likePattern);
   }
 
+  const typeQuery = c.req.query('type')?.toLowerCase();
+  if (typeQuery === 'image') {
+    whereClauses.push("m.mime_type LIKE 'image/%'");
+  } else if (typeQuery === 'video') {
+    whereClauses.push("m.mime_type LIKE 'video/%'");
+  } else if (typeQuery === 'document') {
+    whereClauses.push("NOT (m.mime_type LIKE 'image/%' OR m.mime_type LIKE 'video/%' OR m.mime_type = 'application/x-url')");
+  } else if (typeQuery === 'bookmark') {
+    whereClauses.push("m.mime_type = 'application/x-url'");
+  }
+
   const rawTags = tagQuery
     ? tagQuery.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
     : [];
@@ -330,20 +343,28 @@ app.get('/api/media', (c) => {
     mediaItems = DbClient.queryAll<MediaEntity>(sql, [...queryParams, limit, offset]);
   }
 
-  // Hydrate each media item with its associated tags
-  const result: MediaWithTags[] = mediaItems.map((item) => {
-    const tagRows = DbClient.queryAll<{ name: string }>(
-      `SELECT t.name 
-       FROM tags t 
-       INNER JOIN media_tags mt ON t.id = mt.tag_id 
-       WHERE mt.media_id = ?`,
-      [item.id]
-    );
-    return {
-      ...item,
-      tags: tagRows.map((r) => r.name)
-    };
-  });
+  // Hydrate each media item with its associated tags (and bookmark metadata if applicable)
+  const result: MediaWithTags[] = await Promise.all(
+    mediaItems.map(async (item) => {
+      const tagRows = DbClient.queryAll<{ name: string }>(
+        `SELECT t.name 
+         FROM tags t 
+         INNER JOIN media_tags mt ON t.id = mt.tag_id 
+         WHERE mt.media_id = ?`,
+        [item.id]
+      );
+      if (item.mime_type === 'application/x-url') {
+        const sidecar = await readSidecar(item.filepath).catch(() => null);
+        if (sidecar?.bookmark) {
+          item.bookmark = sidecar.bookmark;
+        }
+      }
+      return {
+        ...item,
+        tags: tagRows.map((r) => r.name)
+      };
+    })
+  );
 
   return c.json({
     data: result,
@@ -354,7 +375,7 @@ app.get('/api/media', (c) => {
 });
 
 // Single media item details
-app.get('/api/media/:id', (c) => {
+app.get('/api/media/:id', async (c) => {
   const mediaId = Number(c.req.param('id'));
   const media = DbClient.queryOne<MediaEntity>('SELECT * FROM media WHERE id = ?', [mediaId]);
   if (!media) {
@@ -367,6 +388,13 @@ app.get('/api/media/:id', (c) => {
      WHERE mt.media_id = ?`,
     [mediaId]
   );
+
+  if (media.mime_type === 'application/x-url') {
+    const sidecar = await readSidecar(media.filepath).catch(() => null);
+    if (sidecar?.bookmark) {
+      media.bookmark = sidecar.bookmark;
+    }
+  }
 
   return c.json({
     data: {
@@ -420,7 +448,15 @@ app.get('/api/media/:id/raw', async (c) => {
   }
 
   try {
-    return await streamFileWithRange(c, media.filepath, media.mime_type);
+    const isDownload = c.req.query('download') === '1' || c.req.query('download') === 'true';
+    const response = await streamFileWithRange(c, media.filepath, media.mime_type);
+    if (isDownload) {
+      response.headers.set(
+        'Content-Disposition',
+        `attachment; filename*=UTF-8''${encodeURIComponent(media.filename)}`
+      );
+    }
+    return response;
   } catch (err) {
     console.error(`[Stream] Error streaming ${media.filename}:`, err);
     return c.json({ error: 'Streaming error' }, 500);
@@ -431,7 +467,25 @@ app.get('/api/media/:id/raw', async (c) => {
 // Media Management & Dual-Write Mutation Endpoints
 // -------------------------------------------------------------
 
-// Collect media from remote URL
+// Preview remote URL metadata (social post, direct media, or webpage bookmark)
+app.post('/api/collect/preview', async (c) => {
+  try {
+    const body = await c.req.json<{ url: string }>();
+    if (!body.url || !body.url.trim()) {
+      return c.json({ error: '請輸入有效的 URL' }, 400);
+    }
+    const preview = await UrlCollectorService.previewUrl(body.url.trim());
+    return c.json({
+      success: true,
+      data: preview
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '解析預覽失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Collect media or bookmark from remote URL with smart triage
 app.post('/api/collect', async (c) => {
   try {
     const body = await c.req.json<{
@@ -447,7 +501,7 @@ app.post('/api/collect', async (c) => {
       return c.json({ error: '請輸入有效的 URL' }, 400);
     }
 
-    const created = await MediaManageService.collectUrl(body.url.trim(), {
+    const result = await UrlCollectorService.collect(body.url.trim(), {
       title: body.title,
       notes: body.notes,
       tags: body.tags,
@@ -457,7 +511,8 @@ app.post('/api/collect', async (c) => {
 
     return c.json({
       success: true,
-      data: created
+      type: result.type,
+      data: result.data
     }, 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : '收錄失敗';

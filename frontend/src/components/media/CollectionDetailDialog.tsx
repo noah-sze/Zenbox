@@ -22,6 +22,13 @@ import {
   ArrowDown,
   Star,
   Unlink,
+  Download,
+  FileText,
+  FileCode,
+  FileSpreadsheet,
+  Archive,
+  File,
+  Music,
 } from 'lucide-react';
 import { VideoPlayer } from './VideoPlayer';
 
@@ -107,6 +114,52 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
     const pad = (n: number) => String(n).padStart(2, '0');
     if (hrs > 0) return `${hrs}:${pad(mins)}:${pad(secs)}`;
     return `${pad(mins)}:${pad(secs)}`;
+  };
+
+  const getDocumentIcon = (extension: string, mime: string) => {
+    if (['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown', '.rtf', '.epub'].includes(extension)) {
+      return <FileText className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (['.xls', '.xlsx', '.csv'].includes(extension)) {
+      return <FileSpreadsheet className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
+      return <Archive className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (
+      ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.json', '.html', '.css', '.sh', '.bash'].includes(
+        extension
+      )
+    ) {
+      return <FileCode className="h-8 w-8 stroke-[1.5]" />;
+    }
+    if (mime.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.ogg', '.m4a'].includes(extension)) {
+      return <Music className="h-8 w-8 stroke-[1.5]" />;
+    }
+    return <File className="h-8 w-8 stroke-[1.5]" />;
+  };
+
+  const getMiniDocumentIcon = (extension: string, mime: string) => {
+    if (['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown', '.rtf', '.epub'].includes(extension)) {
+      return <FileText className="h-4 w-4 stroke-[1.5]" />;
+    }
+    if (['.xls', '.xlsx', '.csv'].includes(extension)) {
+      return <FileSpreadsheet className="h-4 w-4 stroke-[1.5]" />;
+    }
+    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
+      return <Archive className="h-4 w-4 stroke-[1.5]" />;
+    }
+    if (
+      ['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.json', '.html', '.css', '.sh', '.bash'].includes(
+        extension
+      )
+    ) {
+      return <FileCode className="h-4 w-4 stroke-[1.5]" />;
+    }
+    if (mime.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.ogg', '.m4a'].includes(extension)) {
+      return <Music className="h-4 w-4 stroke-[1.5]" />;
+    }
+    return <File className="h-4 w-4 stroke-[1.5]" />;
   };
 
   // Navigation handlers
@@ -279,7 +332,11 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
 
   if (!collection) return null;
 
-  const isCurrentItemVideo = currentItem?.mime_type.startsWith('video/');
+  const isCurrentItemVideo = currentItem?.mime_type.startsWith('video/') || false;
+  const isCurrentItemImage = currentItem?.mime_type.startsWith('image/') || false;
+  const currentExt = currentItem
+    ? ('.' + (currentItem.filename.split('.').pop() || '')).toLowerCase()
+    : '';
   const currentPreviewUrl = currentItem ? `/api/media/${currentItem.id}/thumbnail?size=md` : '';
   const currentRawUrl = currentItem ? `/api/media/${currentItem.id}/raw` : '';
 
@@ -318,8 +375,13 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
                     <Film className="h-3 w-3" />
                     {currentItem.duration ? formatDuration(currentItem.duration) : '影片'}
                   </span>
-                ) : (
+                ) : isCurrentItemImage ? (
                   <span>{currentItem.width}×{currentItem.height}</span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    <span>{formatSize(currentItem.file_size)}</span>
+                  </span>
                 )}
               </div>
             )}
@@ -352,20 +414,44 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
             {currentItem ? (
               isCurrentItemVideo ? (
                 <VideoPlayer key={currentItem.id} item={currentItem} autoPlay />
-              ) : (
+              ) : isCurrentItemImage ? (
                 <img
                   key={currentItem.id}
                   src={currentPreviewUrl}
                   alt={currentItem.title}
                   className="max-h-[65vh] w-auto max-w-full object-contain select-none"
                 />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
+                  <div className="h-16 w-16 rounded-sm border border-border bg-card flex items-center justify-center text-foreground mb-3">
+                    {getDocumentIcon(currentExt, currentItem.mime_type)}
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-sm bg-secondary text-xs font-mono font-bold tracking-widest uppercase border border-border text-foreground mb-2">
+                    {currentExt.replace('.', '') || 'FILE'}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground break-all mb-1">
+                    {currentItem.filename}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-mono mb-6">
+                    {formatSize(currentItem.file_size)} · {currentItem.mime_type}
+                  </span>
+
+                  <a
+                    href={`${currentRawUrl}?download=1`}
+                    download={currentItem.filename}
+                    className="flex items-center space-x-2 h-9 px-4 rounded-sm border border-border bg-card text-xs font-medium text-foreground hover:bg-neutral-800 hover:border-foreground/40 transition-colors shadow-none select-none z-10"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>下載原檔</span>
+                  </a>
+                </div>
               )
             ) : (
               <div className="text-muted-foreground text-xs">無成員項目</div>
             )}
 
             {/* Quick Open Raw button for images */}
-            {currentItem && !isCurrentItemVideo && (
+            {currentItem && isCurrentItemImage && (
               <a
                 href={currentRawUrl}
                 target="_blank"
@@ -384,6 +470,9 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
               {items.map((it, idx) => {
                 const isSelected = idx === activeIndex;
                 const isVideo = it.mime_type.startsWith('video/');
+                const isImage = it.mime_type.startsWith('image/');
+                const isVisual = isImage || isVideo;
+                const itExt = ('.' + (it.filename.split('.').pop() || '')).toLowerCase();
                 const isCover = it.id === coverMediaId;
                 return (
                   <div
@@ -395,14 +484,30 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
                         : 'border-neutral-800 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img
-                      src={`/api/media/${it.id}/thumbnail?size=sm`}
-                      alt={it.title}
-                      className="h-full w-full object-cover"
-                    />
+                    {isVisual ? (
+                      <img
+                        src={`/api/media/${it.id}/thumbnail?size=sm`}
+                        alt={it.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex flex-col items-center justify-center bg-secondary p-1 text-center">
+                        <div className="text-muted-foreground">
+                          {getMiniDocumentIcon(itExt, it.mime_type)}
+                        </div>
+                        <span className="text-[8px] font-mono uppercase text-foreground truncate max-w-full mt-0.5">
+                          {itExt.replace('.', '') || 'FILE'}
+                        </span>
+                      </div>
+                    )}
                     {isVideo && (
                       <div className="absolute top-1 left-1 p-0.5 bg-black/80 rounded-[2px] text-white">
                         <Film className="h-2.5 w-2.5" />
+                      </div>
+                    )}
+                    {!isVisual && (
+                      <div className="absolute top-1 left-1 p-0.5 bg-black/80 rounded-[2px] text-white">
+                        <FileText className="h-2.5 w-2.5" />
                       </div>
                     )}
                     {isCover && (
@@ -638,7 +743,15 @@ export const CollectionDetailDialog: React.FC<CollectionDetailDialogProps> = ({
                   </h3>
                   <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
                     <span className="font-mono">
-                      {collection.image_count} 圖 · {collection.video_count} 片
+                      {[
+                        collection.image_count > 0 ? `${collection.image_count} 圖` : '',
+                        collection.video_count > 0 ? `${collection.video_count} 片` : '',
+                        collection.item_count - collection.image_count - collection.video_count > 0
+                          ? `${collection.item_count - collection.image_count - collection.video_count} 文`
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || `${collection.item_count} 項目`}
                     </span>
                     <span>·</span>
                     <span className="font-mono">{formatSize(collection.total_bytes)}</span>

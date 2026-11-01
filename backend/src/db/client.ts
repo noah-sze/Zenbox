@@ -156,6 +156,7 @@ export interface MediaEntity {
   collection_title?: string | null;
   collection_order?: number | null;
   collection_total?: number | null;
+  bookmark?: import('../watcher/sidecar.js').BookmarkMeta;
 }
 
 export interface TagEntity {

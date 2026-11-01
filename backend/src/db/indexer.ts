@@ -59,8 +59,7 @@ export async function runFullIndexScan(targetLibraryId?: number): Promise<{ tota
     const allFiles = await walkDirectory(lib.root_path);
 
     for (const filePath of allFiles) {
-      const ext = path.extname(filePath).toLowerCase();
-      if (!CONFIG.SUPPORTED_EXTENSIONS.has(ext)) continue;
+      if (!CONFIG.isFileSupported(filePath)) continue;
 
       try {
         await watcher.processMediaFile(filePath, lib.id, lib.root_path);

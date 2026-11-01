@@ -88,8 +88,7 @@ export class LibraryWatcherManager {
   }
 
   private handleFileEvent(lib: LibraryEntity, event: 'add' | 'change', filePath: string): void {
-    const ext = path.extname(filePath).toLowerCase();
-    if (!CONFIG.SUPPORTED_EXTENSIONS.has(ext)) {
+    if (!CONFIG.isFileSupported(filePath)) {
       return;
     }
 
@@ -179,7 +178,6 @@ export class LibraryWatcherManager {
   ): Promise<void> {
     const stat = await fs.stat(filePath);
     const filename = path.basename(filePath);
-    const ext = path.extname(filePath).toLowerCase();
     const relativePath = path.relative(rootPath, filePath).replace(/\\/g, '/');
     const parsedDir = path.dirname(relativePath);
     const directory = parsedDir === '.' ? '' : parsedDir.replace(/\\/g, '/');
@@ -189,19 +187,7 @@ export class LibraryWatcherManager {
     const quickHash = sidecar.hash || (await calculateQuickHash(filePath).catch(() => ''));
 
     // Determine MIME type
-    const mimeMap: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.webp': 'image/webp',
-      '.gif': 'image/gif',
-      '.avif': 'image/avif',
-      '.svg': 'image/svg+xml',
-      '.mp4': 'video/mp4',
-      '.mov': 'video/quicktime',
-      '.webm': 'video/webm'
-    };
-    const mimeType = mimeMap[ext] || 'application/octet-stream';
+    const mimeType = CONFIG.detectMimeType(filePath);
     const nowIso = new Date().toISOString();
 
     // 2. Insert or update Media record in SQLite based on (library_id, relative_path)
@@ -267,12 +253,28 @@ export class LibraryWatcherManager {
     // 3. Synchronize Tags and Media-Tags relations
     await this.syncTagsForMedia(mediaId, sidecar.tags || []);
 
-    // 4. Enqueue thumbnail and dimension extraction for images and videos
+    // 4. Enqueue thumbnail and dimension extraction for images, videos, and bookmarks
     const mediaItem = DbClient.queryOne<MediaEntity>('SELECT * FROM media WHERE id = ?', [mediaId]);
-    if (mediaItem && (mediaItem.mime_type.startsWith('image/') || mediaItem.mime_type.startsWith('video/'))) {
-      ThumbnailService.generateThumbnails(mediaItem).catch((err) => {
-        console.error(`[Watcher] Error generating thumbnails for ${filename}:`, err);
-      });
+    if (mediaItem) {
+      if (mediaItem.mime_type.startsWith('image/') || mediaItem.mime_type.startsWith('video/')) {
+        ThumbnailService.generateThumbnails(mediaItem).catch((err) => {
+          console.error(`[Watcher] Error generating thumbnails for ${filename}:`, err);
+        });
+      } else if (mediaItem.mime_type === 'application/x-url') {
+        const dir = path.dirname(mediaItem.filepath);
+        const snapshotPath = path.join(dir, '.zenbox', `${mediaItem.filename}.preview.webp`);
+        if (existsSync(snapshotPath)) {
+          ThumbnailService.extractImageMetadata(snapshotPath).then((dims) => {
+            if (dims.width > 0 && dims.height > 0) {
+              DbClient.execute('UPDATE media SET width = ?, height = ? WHERE id = ?', [
+                dims.width, dims.height, mediaItem.id
+              ]);
+            }
+          }).catch(() => {});
+          ThumbnailService.getOrGenerateThumbnail(mediaItem, 'sm').catch(() => {});
+          ThumbnailService.getOrGenerateThumbnail(mediaItem, 'md').catch(() => {});
+        }
+      }
     }
   }
 

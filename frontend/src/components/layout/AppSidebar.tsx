@@ -5,13 +5,14 @@ import {
   Film,
   Tag as TagIcon,
   HardDrive,
-  RefreshCw,
   Plus,
   X,
   FolderTree,
   Layers,
   Settings,
   Trash2,
+  FileText,
+  Globe,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -25,14 +26,13 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuBadge,
-  SidebarFooter,
   SidebarRail,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Tag, Library, DirectoryDetail } from '@/types/media';
 import { FolderTreeView } from '@/components/folder/FolderTreeView';
 
-export type MediaTypeFilter = 'all' | 'image' | 'video' | 'collection' | 'trash';
+export type MediaTypeFilter = 'all' | 'image' | 'video' | 'document' | 'bookmark' | 'collection' | 'trash';
 
 interface AppSidebarProps {
   mediaCount: number;
@@ -55,13 +55,15 @@ interface AppSidebarProps {
   // Filters & State
   mediaTypeFilter: MediaTypeFilter;
   onSelectMediaType: (type: MediaTypeFilter) => void;
-  isSyncing: boolean;
-  onTriggerSync: () => void;
+  documentCount?: number;
+  bookmarkCount?: number;
   onOpenSettings?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   mediaCount,
+  documentCount = 0,
+  bookmarkCount = 0,
   trashCount = 0,
   availableTags,
   activeTags,
@@ -77,8 +79,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenFolderDetail,
   mediaTypeFilter,
   onSelectMediaType,
-  isSyncing,
-  onTriggerSync,
   onOpenSettings,
 }) => {
   const [tagSearchQuery, setTagSearchQuery] = useState('');
@@ -90,7 +90,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <Sidebar collapsible="icon">
-      {/* 1. Header: Brand */}
+      {/* 1. Header: Brand & Settings */}
       <SidebarHeader>
         <div className="flex items-center justify-between px-1 py-1">
           <div className="flex items-center space-x-2">
@@ -102,6 +102,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <span className="text-[10px] text-muted-foreground">視覺化第二大腦</span>
             </div>
           </div>
+
+          {onOpenSettings && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="flex items-center justify-center h-7 w-7 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:border-sidebar-ring transition-colors shadow-none select-none group-data-[collapsible=icon]:hidden"
+              title="設置 (⌘,)"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </SidebarHeader>
 
@@ -146,6 +157,34 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 >
                   <Film className="h-4 w-4 shrink-0" />
                   <span className="group-data-[collapsible=icon]:hidden">影片</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'document'}
+                  onClick={() => onSelectMediaType('document')}
+                  tooltip="文件"
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">文件</span>
+                  {documentCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{documentCount}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'bookmark'}
+                  onClick={() => onSelectMediaType('bookmark')}
+                  tooltip="書籤"
+                >
+                  <Globe className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">書籤</span>
+                  {bookmarkCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{bookmarkCount}</SidebarMenuBadge>
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -301,43 +340,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      {/* 3. Footer: Sync & Status */}
-      <SidebarFooter>
-        <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-[11px] text-sidebar-foreground font-medium">
-              {isSyncing ? '比對中...' : '已就緒'}
-            </span>
-            <span className="text-[9px] text-muted-foreground">
-              快捷鍵 ⌘B 展開/收攏
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="flex items-center justify-center h-8 w-8 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:border-sidebar-ring transition-colors"
-              title="系統設置 (⌘,)"
-            >
-              <Settings className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={onTriggerSync}
-              disabled={isSyncing}
-              className="flex items-center justify-center h-8 w-8 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:border-sidebar-ring transition-colors disabled:opacity-50"
-              title="比對檔案系統與索引"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-sidebar-foreground' : ''}`}
-              />
-            </button>
-          </div>
-        </div>
-      </SidebarFooter>
 
       {/* Rail for quick collapse/expand dragging */}
       <SidebarRail />

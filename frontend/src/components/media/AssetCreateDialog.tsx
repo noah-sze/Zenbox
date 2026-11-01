@@ -16,10 +16,21 @@ import {
   FileVideo,
   File as FileIcon,
   Layers,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type CreateAssetTab = 'collect' | 'upload';
+
+export interface UrlPreviewData {
+  type: 'direct_media' | 'bookmark';
+  url: string;
+  title: string;
+  description?: string;
+  domain: string;
+  coverUrl?: string;
+  favicon?: string;
+}
 
 interface AssetCreateDialogProps {
   open: boolean;
@@ -74,6 +85,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
   // Collect Tab specific state
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [urlPreview, setUrlPreview] = useState<UrlPreviewData | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   // Upload Tab specific state
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -89,6 +102,8 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
       setNotes('');
       setUrl('');
       setTitle('');
+      setUrlPreview(null);
+      setIsPreviewLoading(false);
       setSelectedFiles([]);
       setCreateAsCollection(false);
       setCollectionTitle('');
@@ -96,6 +111,45 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
       setIsDragging(false);
     }
   }, [open, defaultLibraryId, defaultDirectory, libraries, initialTab]);
+
+  // Live URL preview fetcher (debounced)
+  useEffect(() => {
+    const trimmed = url.trim();
+    if (!trimmed || !trimmed.startsWith('http')) {
+      setUrlPreview(null);
+      setIsPreviewLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsPreviewLoading(true);
+      try {
+        const res = await fetch('/api/collect/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: trimmed }),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { success: boolean; data: UrlPreviewData };
+          if (json.data) {
+            setUrlPreview(json.data);
+            if (!title.trim() && json.data.title) {
+              setTitle(json.data.title);
+            }
+            if (!notes.trim() && json.data.description) {
+              setNotes(json.data.description);
+            }
+          }
+        }
+      } catch {
+        // non-fatal preview error
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    }, 550);
+
+    return () => clearTimeout(timer);
+  }, [url]);
 
   // Detected domain from URL
   const detectedDomain = useMemo(() => {
@@ -245,12 +299,17 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
         throw new Error(errorJson.error || '收錄失敗');
       }
 
-      const json = (await res.json()) as { success: boolean; data: MediaItem };
+      const json = (await res.json()) as {
+        success: boolean;
+        type: 'media';
+        data: MediaItem;
+      };
+
       if (json.data) {
         onAssetCreated(json.data);
+        toast('已收錄', 'success');
       }
 
-      toast('已收錄', 'success');
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : '收錄失敗';
@@ -454,10 +513,64 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com/artwork.jpg"
+                    placeholder="https://x.com/... 或 https://example.com/article"
                     className="h-9"
                   />
                 </div>
+
+                {/* Live URL Preview Card */}
+                {(isPreviewLoading || urlPreview) && (
+                  <div className="rounded-sm border border-border bg-secondary/50 p-3 space-y-2 font-mono text-xs shadow-none">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {isPreviewLoading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        ) : urlPreview?.type === 'bookmark' ? (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-emerald-600/40 text-emerald-400 bg-emerald-950/20">
+                            網頁書籤
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-neutral-600/40 text-neutral-300 bg-neutral-900/30">
+                            直接檔案
+                          </Badge>
+                        )}
+                        {urlPreview?.domain && (
+                          <span className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                            {urlPreview.domain}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {isPreviewLoading ? (
+                      <div className="py-2 text-[11px] text-muted-foreground animate-pulse">
+                        正在解析網址元數據與快照...
+                      </div>
+                    ) : urlPreview ? (
+                      <div className="flex gap-3 items-start pt-1">
+                        {urlPreview.coverUrl && (
+                          <div className="relative w-16 h-16 shrink-0 rounded-sm overflow-hidden border border-border bg-black">
+                            <img
+                              src={urlPreview.coverUrl}
+                              alt="預覽"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <p className="text-xs font-semibold text-foreground line-clamp-1">
+                            {urlPreview.title}
+                          </p>
+                          {urlPreview.description && (
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                              {urlPreview.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
                 {/* Custom Title */}
                 <div className="space-y-1.5">
@@ -685,7 +798,7 @@ export const AssetCreateDialog: React.FC<AssetCreateDialogProps> = ({
                     </div>
                     <div className="text-xs text-foreground font-medium">拖曳檔案至此，或點擊瀏覽選取</div>
                     <div className="text-[10px] text-muted-foreground mt-1">
-                      支援 JPG, PNG, WebP, GIF, AVIF, MP4, MOV, WebM (最高 500MB)
+                      支援全格式文檔、代碼、壓縮包、圖片與影片
                     </div>
                   </div>
                 </div>

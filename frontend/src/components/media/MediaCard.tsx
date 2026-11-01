@@ -1,16 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MediaItem } from '@/types/media';
 import { Badge } from '@/components/ui/badge';
-import { Film } from 'lucide-react';
+import { Film, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MediaCardProps {
   item: MediaItem;
   onTagClick?: (tag: string) => void;
   onSelect?: (item: MediaItem) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (e: React.MouseEvent, item: MediaItem) => void;
+  isSelectionMode?: boolean;
 }
 
-export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect }) => {
+export const MediaCard: React.FC<MediaCardProps> = ({
+  item,
+  onTagClick,
+  onSelect,
+  isSelected = false,
+  onToggleSelect,
+  isSelectionMode = false,
+}) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isHoverPreviewing, setIsHoverPreviewing] = useState(false);
@@ -88,7 +98,13 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
       ? { aspectRatio: `${item.width} / ${item.height}` }
       : { aspectRatio: '4 / 3' };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.shiftKey || e.metaKey || e.ctrlKey || isSelectionMode) {
+      e.stopPropagation();
+      onToggleSelect?.(e, item);
+      return;
+    }
+
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
     }
@@ -108,8 +124,33 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative flex flex-col overflow-hidden rounded-sm border border-border bg-card transition-colors hover:border-neutral-500 shadow-none cursor-pointer select-none font-mono w-full min-w-0"
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-sm border bg-card transition-colors shadow-none cursor-pointer select-none font-mono w-full min-w-0',
+        isSelected
+          ? 'border-foreground ring-1 ring-foreground'
+          : 'border-border hover:border-neutral-500'
+      )}
     >
+      {/* Multi-Select Checkbox overlay */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleSelect?.(e, item);
+        }}
+        className={cn(
+          'absolute top-2 right-2 h-5 w-5 rounded-sm border flex items-center justify-center transition-all z-30',
+          isSelected
+            ? 'bg-foreground border-foreground text-background opacity-100'
+            : isSelectionMode
+            ? 'bg-black/60 border-white/60 text-transparent opacity-90 hover:opacity-100 hover:border-white'
+            : 'bg-black/60 border-white/40 text-transparent opacity-0 group-hover:opacity-100 hover:border-white'
+        )}
+        title={isSelected ? '取消選取' : '選取'}
+      >
+        <Check className={cn('h-3.5 w-3.5 stroke-[3]', isSelected ? 'opacity-100' : 'opacity-0')} />
+      </button>
+
       {/* Media Aspect Ratio Container / Exact Placeholder */}
       <div
         style={aspectRatioStyle}
@@ -177,14 +218,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
             {formatDuration(item.duration)}
           </div>
         ) : item.width > 0 && item.height > 0 ? (
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-[2px] border border-white/10 text-[9px] font-mono text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity z-20">
             {item.width}×{item.height}
           </div>
         ) : null}
       </div>
 
       {/* Metadata & Tag Footer */}
-      <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 sm:space-y-2 border-t border-border bg-black">
+      <div className="flex flex-col p-2.5 sm:p-3 space-y-1.5 sm:space-y-2 border-t border-border bg-card">
         <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground gap-1">
           <span className="truncate max-w-[80px] sm:max-w-[120px] font-mono">{formatSize(item.file_size)}</span>
           <span className="font-mono shrink-0">{formatDate(item.added_at)}</span>
@@ -197,7 +238,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onTagClick, onSelect
               <Badge
                 key={tag}
                 variant="outline"
-                className="cursor-pointer text-[9px] sm:text-[10px] py-0 px-1 sm:px-1.5 hover:bg-white hover:text-black hover:border-white transition-none shrink-0"
+                className="cursor-pointer text-[9px] sm:text-[10px] py-0 px-1 sm:px-1.5 hover:bg-foreground hover:text-background hover:border-foreground transition-none shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   onTagClick?.(tag);

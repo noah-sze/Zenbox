@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenbox · 收集與上傳 Dialog 設計圖</title>
+  <!-- Google Fonts: JetBrains Mono & Noto Serif TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#000000',
+            foreground: '#ededed',
+            card: '#0a0a0a',
+            border: '#262626',
+            input: '#262626',
+            secondary: '#171717',
+            muted: '#a1a1a1',
+            destructive: '#dc2626',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            serif: ['"Noto Serif TC"', 'ui-serif', 'serif'],
+          },
+          boxShadow: {
+            none: 'none',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #000000;
+      color: #ededed;
+      font-family: 'JetBrains Mono', monospace;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Minimal Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #404040;
+    }
+  </style>
+</head>
+<body class="bg-black text-foreground antialiased selection:bg-white selection:text-black p-4">
+
+  <!-- Background Dim Overlay (Frosted Glass with Alpha) -->
+  <div class="fixed inset-0 bg-black/80 backdrop-blur-[2px] z-10 flex items-center justify-center p-3 sm:p-6">
+
+    <!-- Dialog Container (Anti-Jitter Constant Geometry: 820px x 650px) -->
+    <div class="relative z-20 flex flex-col w-full max-w-4xl h-[660px] max-h-[94vh] bg-[#0a0a0a] border border-[#262626] rounded-sm overflow-hidden font-mono shadow-none">
+      
+      <!-- ============================================================== -->
+      <!-- DIALOG HEADER: Title, Tab Segmented Control, Close Button      -->
+      <!-- ============================================================== -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-[#262626] bg-black shrink-0">
+        <!-- Left: Title & Mode Switcher -->
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            <h2 class="text-xs uppercase font-bold tracking-wider text-white">新增資產</h2>
+          </div>
+
+          <!-- Segmented Tab Switcher (shadcn style) -->
+          <div class="flex items-center p-0.5 rounded-sm bg-[#171717] border border-[#262626] text-xs">
+            <button
+              id="tab-btn-collect"
+              type="button"
+              onclick="switchTab('collect')"
+              class="flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none bg-white text-black font-semibold"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+              </svg>
+              <span>收集 (URL)</span>
+            </button>
+
+            <button
+              id="tab-btn-upload"
+              type="button"
+              onclick="switchTab('upload')"
+              class="flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none text-neutral-400 hover:text-white"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+              </svg>
+              <span>上傳 (檔案)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Close Button -->
+        <button
+          type="button"
+          onclick="alert('點擊關閉彈窗')"
+          class="p-1 rounded-sm text-neutral-400 hover:text-white transition-none border border-transparent hover:border-[#262626]"
+          title="關閉"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- DIALOG BODY: Dual-Pane Split Layout (Input Column & Inspector) -->
+      <!-- ============================================================== -->
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#0a0a0a]">
+        
+        <!-- ------------------------------------------------------------ -->
+        <!-- TAB 1: 收集 (URL COLLECTOR)                                  -->
+        <!-- ------------------------------------------------------------ -->
+        <div id="panel-collect" class="flex-1 flex flex-col md:flex-row w-full h-full overflow-hidden">
+          <!-- Form Inputs (Left Column - 60%) -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-4 border-b md:border-b-0 md:border-r border-[#262626]">
+            
+            <!-- URL Input Group -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="collect-url" class="text-xs font-medium text-neutral-300 flex items-center gap-1.5">
+                  <span class="text-white font-bold">來源網址</span>
+                  <span class="text-[10px] text-neutral-500 font-normal">HTTP / HTTPS 網址</span>
+                </label>
+                <button
+                  type="button"
+                  onclick="pasteSampleUrl()"
+                  class="text-[10px] text-neutral-400 hover:text-white border border-[#262626] px-1.5 py-0.5 rounded-sm bg-[#171717]"
+                >
+                  填入範例
+                </button>
+              </div>
+              <div class="relative flex items-center">
+                <input
+                  type="url"
+                  id="collect-url"
+                  placeholder="https://images.unsplash.com/photo-minimal-architecture..."
+                  value="https://images.unsplash.com/photo-1513694203232-719a280e022f"
+                  oninput="handleUrlInput(this.value)"
+                  class="w-full h-9 bg-black border border-[#262626] rounded-sm px-3 text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-white transition-none"
+                />
+              </div>
+            </div>
+
+            <!-- Custom Title (Optional override) -->
+            <div class="space-y-1.5">
+              <label for="collect-title" class="text-xs font-medium text-neutral-300">
+                <span>資產標題</span>
+                <span class="text-[10px] text-neutral-500 font-normal ml-1">（選填，預設自網址或網頁提取）</span>
+              </label>
+              <input
+                type="text"
+                id="collect-title"
+                value="Minimalist Architecture in Fog"
+                class="w-full h-8 bg-black border border-[#262626] rounded-sm px-2.5 text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-white transition-none"
+              />
+            </div>
+
+            <!-- Dual Storage Selectors (Library & Folder) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[#262626]/60">
+              <!-- Target Storage Library -->
+              <div class="space-y-1">
+                <label for="collect-library" class="text-xs font-medium text-neutral-300">存放儲存庫</label>
+                <select
+                  id="collect-library"
+                  class="w-full h-8 bg-black border border-[#262626] rounded-sm px-2 text-xs font-mono text-white focus:outline-none focus:border-white"
+                >
+                  <option value="1">預設本機庫 (Storage Main)</option>
+                  <option value="2">設計備份庫 (Design Archive)</option>
+                </select>
+              </div>
+
+              <!-- Target Directory Folder -->
+              <div class="space-y-1">
+                <label for="collect-directory" class="text-xs font-medium text-neutral-300">存放文件夾</label>
+                <select
+                  id="collect-directory"
+                  class="w-full h-8 bg-black border border-[#262626] rounded-sm px-2 text-xs font-mono text-white focus:outline-none focus:border-white"
+                >
+                  <option value="">(根目錄 /)</option>
+                  <option value="2026/architecture" selected>2026/architecture</option>
+                  <option value="2026/branding">2026/branding</option>
+                  <option value="inbox">inbox</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tag Editor Section -->
+            <div class="space-y-2 pt-2 border-t border-[#262626]/60">
+              <label class="text-xs font-medium text-neutral-300">標籤</label>
+
+              <!-- Active Tag Badges -->
+              <div id="collect-tag-list" class="flex flex-wrap gap-1.5 min-h-[26px]">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white">
+                  #architecture
+                  <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white">
+                  #minimal
+                  <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white">
+                  #fog
+                  <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>
+                </span>
+              </div>
+
+              <!-- Tag Input & Add Button -->
+              <div class="flex items-center space-x-1.5">
+                <input
+                  type="text"
+                  id="collect-tag-input"
+                  placeholder="標籤名稱 (按 Enter 新增)"
+                  onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addCustomTag('collect');}"
+                  class="flex-1 h-7 bg-black border border-[#262626] rounded-sm px-2 text-[11px] font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-white"
+                />
+                <button
+                  type="button"
+                  onclick="addCustomTag('collect')"
+                  class="h-7 px-2.5 rounded-sm border border-[#262626] bg-[#171717] text-[11px] font-mono text-neutral-300 hover:text-white hover:border-neutral-500"
+                >
+                  + 新增
+                </button>
+              </div>
+
+              <!-- Quick Tag Suggestions -->
+              <div class="flex flex-wrap items-center gap-1 pt-0.5">
+                <span class="text-[10px] text-neutral-500">建議:</span>
+                <button type="button" onclick="addSuggestedTag('collect', 'brutalism')" class="px-1.5 py-0.5 text-[10px] rounded-sm border border-[#262626] bg-black text-neutral-400 hover:text-white hover:border-neutral-500">+brutalism</button>
+                <button type="button" onclick="addSuggestedTag('collect', 'interior')" class="px-1.5 py-0.5 text-[10px] rounded-sm border border-[#262626] bg-black text-neutral-400 hover:text-white hover:border-neutral-500">+interior</button>
+                <button type="button" onclick="addSuggestedTag('collect', 'concrete')" class="px-1.5 py-0.5 text-[10px] rounded-sm border border-[#262626] bg-black text-neutral-400 hover:text-white hover:border-neutral-500">+concrete</button>
+                <button type="button" onclick="addSuggestedTag('collect', 'facade')" class="px-1.5 py-0.5 text-[10px] rounded-sm border border-[#262626] bg-black text-neutral-400 hover:text-white hover:border-neutral-500">+facade</button>
+              </div>
+            </div>
+
+            <!-- Objective Notes (Noto Serif TC) -->
+            <div class="space-y-1.5 pt-2 border-t border-[#262626]/60">
+              <label for="collect-notes" class="text-xs font-medium text-neutral-300">客觀備註</label>
+              <textarea
+                id="collect-notes"
+                rows="2"
+                placeholder="無備註"
+                class="w-full bg-black border border-[#262626] rounded-sm p-2 text-xs font-serif text-white placeholder:text-neutral-600 focus:outline-none focus:border-white leading-relaxed resize-none"
+              >幾何冷杉與混凝土立面光影，收錄作為視覺靈感與空間比例參考。</textarea>
+            </div>
+          </div>
+
+          <!-- Collector Live Inspector (Right Column - 40%) -->
+          <div class="w-full md:w-80 bg-black flex flex-col justify-between p-5 space-y-4 overflow-y-auto">
+            <div class="space-y-3">
+              <!-- Inspector Header -->
+              <div class="flex items-center justify-between border-b border-[#262626] pb-2">
+                <span class="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">即時解析預覽</span>
+                <span class="px-1.5 py-0.5 rounded-sm bg-neutral-900 border border-neutral-700 text-[10px] text-neutral-300">
+                  HTTP 就緒
+                </span>
+              </div>
+
+              <!-- Live Card Aspect-Ratio Preview Container -->
+              <div class="relative w-full aspect-[4/3] rounded-sm border border-[#262626] bg-[#0a0a0a] overflow-hidden flex items-center justify-center">
+                <img
+                  id="collect-preview-img"
+                  src="https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80"
+                  alt="預覽圖"
+                  class="w-full h-full object-cover select-none"
+                  onerror="this.style.display='none'"
+                />
+                <div class="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-sm bg-black/80 backdrop-blur-[2px] border border-white/10 text-[9px] text-white">
+                  IMAGE / REMOTE
+                </div>
+              </div>
+
+              <!-- Technical Spec Grid -->
+              <div class="space-y-2 pt-1 text-[11px] text-neutral-400">
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">來源網域</span>
+                  <span id="collect-preview-domain" class="text-white truncate max-w-[160px]">images.unsplash.com</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">傳輸協定</span>
+                  <span class="text-white">HTTPS / TLS 1.3</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">真理源寫入</span>
+                  <span class="text-white">Sidecar JSON + 原檔串流</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">離線快取</span>
+                  <span class="text-white">IndexedDB 離線就緒</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Objective Notice -->
+            <div class="p-2.5 rounded-sm border border-[#262626] bg-[#121212] text-[10px] text-neutral-400 leading-normal">
+              收錄後將非同步下載原檔儲存至 <code class="text-white font-mono">/storage/originals</code>，並生成 Sidecar 元數據伴隨文件。
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- TAB 2: 上傳 (LOCAL FILE UPLOADER)                           -->
+        <!-- ------------------------------------------------------------ -->
+        <div id="panel-upload" class="hidden flex-1 flex flex-col md:flex-row w-full h-full overflow-hidden">
+          <!-- Form Inputs & File Drop Zone (Left Column - 60%) -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-4 border-b md:border-b-0 md:border-r border-[#262626]">
+            
+            <!-- File Drag and Drop Target Zone -->
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-neutral-300">選擇本機檔案</label>
+              <div
+                class="relative border border-dashed border-[#333333] hover:border-white rounded-sm p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-black/40 group"
+                onclick="document.getElementById('file-upload-input').click()"
+              >
+                <input
+                  type="file"
+                  id="file-upload-input"
+                  multiple
+                  class="hidden"
+                  onchange="handleFileSelect(event)"
+                />
+                <div class="w-10 h-10 rounded-sm border border-[#262626] bg-[#121212] flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:border-neutral-500 mb-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                  </svg>
+                </div>
+                <div class="text-xs text-white font-medium">拖曳檔案至此，或點擊瀏覽選取</div>
+                <div class="text-[10px] text-neutral-500 mt-1">
+                  支援 JPG, PNG, WebP, GIF, AVIF, MP4, MOV, WebM (單檔最高 500MB)
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected File Queue Preview Strip -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-neutral-400">
+                <span>待上傳清單 (1)</span>
+                <button type="button" class="text-[10px] text-neutral-500 hover:text-white">清空全部</button>
+              </div>
+
+              <div class="p-2 rounded-sm border border-[#262626] bg-black flex items-center justify-between">
+                <div class="flex items-center space-x-2.5 truncate">
+                  <div class="w-8 h-8 rounded-sm bg-[#171717] border border-[#262626] flex items-center justify-center text-[10px] text-white uppercase font-bold shrink-0">
+                    JPG
+                  </div>
+                  <div class="truncate">
+                    <div class="text-xs text-white font-medium truncate">concrete_monolith_structure.jpg</div>
+                    <div class="text-[10px] text-neutral-500 font-mono">3.4 MB · 3840 × 2160</div>
+                  </div>
+                </div>
+                <button type="button" class="text-neutral-500 hover:text-white p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Target Storage Selectors -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[#262626]/60">
+              <div class="space-y-1">
+                <label for="upload-library" class="text-xs font-medium text-neutral-300">存放儲存庫</label>
+                <select
+                  id="upload-library"
+                  class="w-full h-8 bg-black border border-[#262626] rounded-sm px-2 text-xs font-mono text-white focus:outline-none focus:border-white"
+                >
+                  <option value="1">預設本機庫 (Storage Main)</option>
+                  <option value="2">設計備份庫 (Design Archive)</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label for="upload-directory" class="text-xs font-medium text-neutral-300">存放文件夾</label>
+                <select
+                  id="upload-directory"
+                  class="w-full h-8 bg-black border border-[#262626] rounded-sm px-2 text-xs font-mono text-white focus:outline-none focus:border-white"
+                >
+                  <option value="">(根目錄 /)</option>
+                  <option value="2026/architecture" selected>2026/architecture</option>
+                  <option value="2026/branding">2026/branding</option>
+                  <option value="inbox">inbox</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tag Editor Section -->
+            <div class="space-y-2 pt-2 border-t border-[#262626]/60">
+              <label class="text-xs font-medium text-neutral-300">批次套用標籤</label>
+              <div id="upload-tag-list" class="flex flex-wrap gap-1.5 min-h-[26px]">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white">
+                  #concrete
+                  <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white">
+                  #brutalism
+                  <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-1.5">
+                <input
+                  type="text"
+                  id="upload-tag-input"
+                  placeholder="標籤名稱 (按 Enter 新增)"
+                  onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addCustomTag('upload');}"
+                  class="flex-1 h-7 bg-black border border-[#262626] rounded-sm px-2 text-[11px] font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-white"
+                />
+                <button
+                  type="button"
+                  onclick="addCustomTag('upload')"
+                  class="h-7 px-2.5 rounded-sm border border-[#262626] bg-[#171717] text-[11px] font-mono text-neutral-300 hover:text-white hover:border-neutral-500"
+                >
+                  + 新增
+                </button>
+              </div>
+            </div>
+
+            <!-- Objective Notes (Noto Serif TC) -->
+            <div class="space-y-1.5 pt-2 border-t border-[#262626]/60">
+              <label for="upload-notes" class="text-xs font-medium text-neutral-300">客觀備註</label>
+              <textarea
+                id="upload-notes"
+                rows="2"
+                placeholder="無備註"
+                class="w-full bg-black border border-[#262626] rounded-sm p-2 text-xs font-serif text-white placeholder:text-neutral-600 focus:outline-none focus:border-white leading-relaxed resize-none"
+              >本機相機直出 RAW 轉存 WebP 格式。</textarea>
+            </div>
+          </div>
+
+          <!-- Upload Inspector (Right Column - 40%) -->
+          <div class="w-full md:w-80 bg-black flex flex-col justify-between p-5 space-y-4 overflow-y-auto">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between border-b border-[#262626] pb-2">
+                <span class="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">待處理資產規範</span>
+                <span class="px-1.5 py-0.5 rounded-sm bg-neutral-900 border border-neutral-700 text-[10px] text-neutral-300">
+                  原真性保護
+                </span>
+              </div>
+
+              <!-- Pipeline Specifications Checklist -->
+              <div class="space-y-2 pt-1 text-[11px] text-neutral-400">
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">待上傳數量</span>
+                  <span class="text-white font-mono">1 個檔案</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">總檔案大小</span>
+                  <span class="text-white font-mono">3.4 MB</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">處理佇列管線</span>
+                  <span class="text-white">Sharp WebP (sm/md)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">指紋雜湊</span>
+                  <span class="text-white">SHA-256 QuickHash</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-neutral-500">目標目錄</span>
+                  <span class="text-white font-mono">/storage/originals/2026/architecture</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Objective Notice -->
+            <div class="p-2.5 rounded-sm border border-[#262626] bg-[#121212] text-[10px] text-neutral-400 leading-normal">
+              原始檔案二進制唯讀不可變，將完整保留於原生檔案系統，元數據寫入同級 <code class="text-white font-mono">.zenbox/</code> Sidecar。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- DIALOG FOOTER: Status Notice, Cancel, Primary Action Button   -->
+      <!-- ============================================================== -->
+      <div class="flex items-center justify-between px-5 py-3 border-t border-[#262626] bg-black shrink-0">
+        <!-- Left: Status Indicator -->
+        <div class="flex items-center space-x-2 text-xs text-neutral-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span id="footer-status-text">來源網址已就緒</span>
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="flex items-center space-x-2">
+          <button
+            type="button"
+            onclick="alert('已取消')"
+            class="h-8 px-3 rounded-sm border border-transparent text-xs text-neutral-400 hover:text-white hover:bg-[#171717] transition-none"
+          >
+            取消
+          </button>
+          
+          <button
+            id="footer-submit-btn"
+            type="button"
+            onclick="handleSubmit()"
+            class="h-8 px-4 rounded-sm bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-none flex items-center space-x-1.5"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="footer-submit-text">收錄</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    let activeTab = 'collect';
+
+    function switchTab(tab) {
+      activeTab = tab;
+      const collectBtn = document.getElementById('tab-btn-collect');
+      const uploadBtn = document.getElementById('tab-btn-upload');
+      const panelCollect = document.getElementById('panel-collect');
+      const panelUpload = document.getElementById('panel-upload');
+      const footerStatus = document.getElementById('footer-status-text');
+      const footerSubmitText = document.getElementById('footer-submit-text');
+
+      if (tab === 'collect') {
+        collectBtn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none bg-white text-black font-semibold';
+        uploadBtn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none text-neutral-400 hover:text-white';
+        panelCollect.classList.remove('hidden');
+        panelUpload.classList.add('hidden');
+        footerStatus.textContent = '來源網址已就緒';
+        footerSubmitText.textContent = '收錄';
+      } else {
+        uploadBtn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none bg-white text-black font-semibold';
+        collectBtn.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-sm text-xs font-medium transition-none text-neutral-400 hover:text-white';
+        panelUpload.classList.remove('hidden');
+        panelCollect.classList.add('hidden');
+        footerStatus.textContent = '1 個檔案待上傳 (3.4 MB)';
+        footerSubmitText.textContent = '上傳';
+      }
+    }
+
+    function removeTag(btn) {
+      btn.parentElement.remove();
+    }
+
+    function addCustomTag(prefix) {
+      const input = document.getElementById(`${prefix}-tag-input`);
+      const val = (input.value || '').trim().toLowerCase().replace(/^#/, '');
+      if (!val) return;
+      appendTagBadge(prefix, val);
+      input.value = '';
+    }
+
+    function addSuggestedTag(prefix, tagName) {
+      appendTagBadge(prefix, tagName);
+    }
+
+    function appendTagBadge(prefix, name) {
+      const list = document.getElementById(`${prefix}-tag-list`);
+      // Check duplicate
+      const existing = Array.from(list.querySelectorAll('span')).map(s => s.textContent.replace('×', '').trim());
+      if (existing.includes(`#${name}`)) return;
+
+      const badge = document.createElement('span');
+      badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#171717] border border-[#262626] text-[11px] text-white';
+      badge.innerHTML = `#${name} <button type="button" onclick="removeTag(this)" class="hover:text-red-400">×</button>`;
+      list.appendChild(badge);
+    }
+
+    function handleUrlInput(val) {
+      const domainSpan = document.getElementById('collect-preview-domain');
+      try {
+        const u = new URL(val);
+        domainSpan.textContent = u.hostname;
+      } catch {
+        domainSpan.textContent = '自訂網址格式';
+      }
+    }
+
+    function pasteSampleUrl() {
+      const sample = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c';
+      document.getElementById('collect-url').value = sample;
+      handleUrlInput(sample);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        alert(`已選取 ${files.length} 個檔案: ${files[0].name}`);
+      }
+    }
+
+    function handleSubmit() {
+      if (activeTab === 'collect') {
+        alert('已提交收錄任務：正在加入後端抓取佇列！');
+      } else {
+        alert('已開始上傳檔案：即將寫入 /storage/originals 並生成 WebP 縮圖！');
+      }
+    }
+  </script>
+</body>
+</html>

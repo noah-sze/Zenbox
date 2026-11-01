@@ -13,10 +13,22 @@ export interface SidecarData {
   sourceUrl?: string;
   notes?: string;
   hash?: string;
+  collection?: {
+    id: string;
+    title?: string;
+    order?: number;
+    total?: number;
+  };
   meta?: {
     width?: number;
     height?: number;
     duration?: number;
+  };
+  trash?: {
+    trashedAt: string;
+    originalLibraryId: number;
+    originalRelativePath: string;
+    originalDirectory: string;
   };
 }
 

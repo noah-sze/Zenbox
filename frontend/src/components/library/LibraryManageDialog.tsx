@@ -106,10 +106,10 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
       {/* Instant Pop Modal Container */}
       <div className="relative z-50 flex flex-col w-full max-w-2xl max-h-[85vh] bg-card border border-border rounded-sm overflow-hidden shadow-none font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-black">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
-            <HardDrive className="h-4 w-4 text-white" />
-            <h2 className="text-sm font-bold text-white tracking-wide">儲存來源管理</h2>
+            <HardDrive className="h-4 w-4 text-foreground" />
+            <h2 className="text-sm font-bold text-foreground tracking-wide">儲存來源管理</h2>
             <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
               {libraries.length} 個來源
             </Badge>
@@ -117,14 +117,14 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded-sm transition-none"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-sm transition-none"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Content list & Form */}
-        <div className="p-5 space-y-5 overflow-y-auto bg-black text-xs">
+        <div className="p-5 space-y-5 overflow-y-auto bg-card text-xs">
           {/* Library List */}
           <div className="space-y-2">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground">已掛載庫</span>
@@ -136,14 +136,14 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                 >
                   <div className="space-y-1 min-w-0 pr-2">
                     <div className="flex items-center space-x-2">
-                      <span className="font-bold text-white text-xs">{lib.name}</span>
+                      <span className="font-bold text-foreground text-xs">{lib.name}</span>
                       {lib.is_default === 1 && (
-                        <Badge variant="secondary" className="text-[10px] py-0 px-1 border-neutral-700">
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1 border-border">
                           預設
                         </Badge>
                       )}
                       {lib.is_readonly === 1 && (
-                        <Badge variant="outline" className="text-[10px] py-0 px-1 text-neutral-400">
+                        <Badge variant="outline" className="text-[10px] py-0 px-1 text-muted-foreground border-border">
                           唯讀
                         </Badge>
                       )}
@@ -151,7 +151,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                     <p className="text-[11px] text-muted-foreground truncate font-mono" title={lib.root_path}>
                       {lib.root_path}
                     </p>
-                    <div className="flex items-center space-x-3 text-[10px] text-neutral-500 pt-0.5">
+                    <div className="flex items-center space-x-3 text-[10px] text-muted-foreground pt-0.5">
                       <span>{lib.media_count || 0} 個項目</span>
                       <span>·</span>
                       <span>{formatSize(lib.total_bytes)}</span>
@@ -163,17 +163,17 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                       type="button"
                       onClick={() => handleScan(lib.id)}
                       disabled={scanningId === lib.id}
-                      className="flex items-center space-x-1 px-2 py-1 rounded-sm border border-border text-[11px] text-muted-foreground hover:text-white hover:border-neutral-500 disabled:opacity-50"
+                      className="flex items-center space-x-1 px-2 py-1 rounded-sm border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/30 disabled:opacity-50"
                       title="重掃描"
                     >
-                      <RefreshCw className={`h-3 w-3 ${scanningId === lib.id ? 'animate-spin text-white' : ''}`} />
+                      <RefreshCw className={`h-3 w-3 ${scanningId === lib.id ? 'animate-spin text-foreground' : ''}`} />
                       <span>掃描</span>
                     </button>
                     {lib.is_default !== 1 && (
                       <button
                         type="button"
                         onClick={() => handleDelete(lib.id)}
-                        className="p-1 rounded-sm border border-border text-neutral-500 hover:text-red-400 hover:border-red-500/50"
+                        className="p-1 rounded-sm border border-border text-muted-foreground hover:text-red-500 hover:border-red-500/40"
                         title="卸載"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -196,34 +196,34 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
             <form onSubmit={handleCreate} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase">來源名稱</label>
+                  <label className="text-[10px] text-muted-foreground uppercase">來源名稱</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="例如: 外接照片庫"
-                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400"
+                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground/40"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase">實體本機路徑</label>
+                  <label className="text-[10px] text-muted-foreground uppercase">實體本機路徑</label>
                   <input
                     type="text"
                     value={rootPath}
                     onChange={(e) => setRootPath(e.target.value)}
                     placeholder="例如: D:/Photos 或 /Volumes/Media"
-                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 font-mono"
+                    className="w-full bg-card border border-border px-2.5 py-1.5 rounded-sm text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground/40 font-mono"
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center space-x-2 cursor-pointer select-none text-[11px] text-neutral-400">
+                <label className="flex items-center space-x-2 cursor-pointer select-none text-[11px] text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={isReadonly}
                     onChange={(e) => setIsReadonly(e.target.checked)}
-                    className="rounded-none bg-card border-border text-white focus:ring-0"
+                    className="rounded-none bg-card border-border text-foreground focus:ring-0"
                   />
                   <span>唯讀模式（禁止由前端上傳或修改原檔）</span>
                 </label>
@@ -231,7 +231,7 @@ export const LibraryManageDialog: React.FC<LibraryManageDialogProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting || !name.trim() || !rootPath.trim()}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <RefreshCw className="h-3 w-3 animate-spin" />

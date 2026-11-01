@@ -20,6 +20,10 @@ export interface SystemStats {
     cacheBytes: number;
     totalBytes: number;
   };
+  trash: {
+    total: number;
+    bytes: number;
+  };
   uptimeSeconds: number;
 }
 
@@ -49,13 +53,16 @@ export class StatsService {
   }
 
   public static async getStats(): Promise<SystemStats> {
-    // 1. Media counts
-    const totalRow = DbClient.queryOne<{ count: number }>('SELECT COUNT(*) as count FROM media');
+    // 1. Media counts (active only)
+    const totalRow = DbClient.queryOne<{ count: number }>('SELECT COUNT(*) as count FROM media WHERE is_trashed = 0');
     const imagesRow = DbClient.queryOne<{ count: number }>(
-      "SELECT COUNT(*) as count FROM media WHERE mime_type LIKE 'image/%'"
+      "SELECT COUNT(*) as count FROM media WHERE mime_type LIKE 'image/%' AND is_trashed = 0"
     );
     const videosRow = DbClient.queryOne<{ count: number }>(
-      "SELECT COUNT(*) as count FROM media WHERE mime_type LIKE 'video/%'"
+      "SELECT COUNT(*) as count FROM media WHERE mime_type LIKE 'video/%' AND is_trashed = 0"
+    );
+    const trashedRow = DbClient.queryOne<{ count: number; bytes: number }>(
+      'SELECT COUNT(*) as count, COALESCE(SUM(file_size), 0) as bytes FROM media WHERE is_trashed = 1'
     );
 
     const totalMedia = totalRow ? Number(totalRow.count) : 0;
@@ -63,7 +70,7 @@ export class StatsService {
     const totalVideos = videosRow ? Number(videosRow.count) : 0;
     const totalOther = Math.max(0, totalMedia - totalImages - totalVideos);
 
-    // 2. Tag metrics
+    // 2. Tag metrics (active media only)
     const tagsCountRow = DbClient.queryOne<{ count: number }>('SELECT COUNT(*) as count FROM tags');
     const totalTags = tagsCountRow ? Number(tagsCountRow.count) : 0;
 
@@ -71,6 +78,8 @@ export class StatsService {
       `SELECT t.name, COUNT(mt.media_id) as count
        FROM tags t
        INNER JOIN media_tags mt ON t.id = mt.tag_id
+       INNER JOIN media m ON mt.media_id = m.id
+       WHERE m.is_trashed = 0
        GROUP BY t.id
        ORDER BY count DESC
        LIMIT 10`
@@ -95,6 +104,10 @@ export class StatsService {
         originalsBytes,
         cacheBytes,
         totalBytes: originalsBytes + cacheBytes
+      },
+      trash: {
+        total: trashedRow ? Number(trashedRow.count) : 0,
+        bytes: trashedRow ? Number(trashedRow.bytes) : 0
       },
       uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000)
     };

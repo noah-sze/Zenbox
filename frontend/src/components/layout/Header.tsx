@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Plus } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
   Breadcrumb,
@@ -10,16 +10,18 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Library } from '@/types/media';
+import { MediaTypeFilter } from '@/components/layout/AppSidebar';
 
 interface HeaderProps {
   onOpenCommand: () => void;
+  onOpenCreateAsset?: () => void;
   onTriggerSync: () => void;
   isSyncing: boolean;
   // Breadcrumb props
   libraries: Library[];
   activeLibraryId: number | null;
   activeDirectory: string | null;
-  mediaTypeFilter: 'all' | 'image' | 'video';
+  mediaTypeFilter: MediaTypeFilter;
   onNavigateRoot: () => void;
   onNavigateLibrary: (libraryId: number) => void;
   onNavigateDirectory: (directory: string, libraryId: number) => void;
@@ -27,6 +29,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenCommand,
+  onOpenCreateAsset,
   onTriggerSync,
   isSyncing,
   libraries,
@@ -47,13 +50,15 @@ export const Header: React.FC<HeaderProps> = ({
   const getRootLabel = () => {
     if (mediaTypeFilter === 'image') return '圖片';
     if (mediaTypeFilter === 'video') return '影片';
+    if (mediaTypeFilter === 'collection') return '合集';
+    if (mediaTypeFilter === 'trash') return '垃圾桶';
     return '全部媒體';
   };
 
   const isAtRoot = activeLibraryId === null && !activeDirectory;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-black/80 backdrop-blur-md font-mono">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background backdrop-blur-md font-mono">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6 w-full">
         {/* Left: Sidebar Trigger & Breadcrumb Navigation */}
         <div className="flex items-center space-x-3 min-w-0 pr-4">
@@ -121,17 +126,30 @@ export const Header: React.FC<HeaderProps> = ({
           </Breadcrumb>
         </div>
 
-        {/* Right: Search & Sync Controls */}
+        {/* Right: Search, Create & Sync Controls */}
         <div className="flex items-center space-x-2 shrink-0">
+          {/* Create / Collect Asset Trigger */}
+          {onOpenCreateAsset && (
+            <button
+              type="button"
+              onClick={onOpenCreateAsset}
+              className="flex items-center space-x-1.5 h-8 px-2.5 rounded-sm bg-white text-black text-xs font-semibold hover:bg-neutral-200 transition-colors shadow-none select-none"
+              title="收集網址或上傳檔案"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">新增</span>
+            </button>
+          )}
+
           {/* Cmd+K trigger button */}
           <button
             type="button"
             onClick={onOpenCommand}
-            className="flex items-center space-x-2 h-8 px-2.5 rounded-sm border border-border bg-card text-xs text-muted-foreground hover:text-white hover:border-neutral-500 transition-colors shadow-none select-none"
+            className="flex items-center space-x-2 h-8 px-2.5 rounded-sm border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors shadow-none select-none"
           >
             <Search className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">搜尋或指令...</span>
-            <kbd className="hidden sm:inline-block pointer-events-none text-[10px] text-neutral-500 bg-secondary px-1 rounded-sm border border-border">
+            <kbd className="hidden sm:inline-block pointer-events-none text-[10px] text-muted-foreground bg-secondary px-1 rounded-sm border border-border font-mono">
               ⌘K
             </kbd>
           </button>
@@ -141,10 +159,10 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onTriggerSync}
             disabled={isSyncing}
-            className="flex items-center justify-center h-8 w-8 rounded-sm border border-border bg-card text-muted-foreground hover:text-white hover:border-neutral-500 transition-colors disabled:opacity-50 shadow-none"
+            className="flex items-center justify-center h-8 w-8 rounded-sm border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50 shadow-none"
             title="比對檔案系統與索引"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-white' : ''}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-foreground' : ''}`} />
           </button>
         </div>
       </div>

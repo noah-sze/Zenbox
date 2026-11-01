@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS media (
   title TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT '',
   source_url TEXT NOT NULL DEFAULT '',
+  is_trashed INTEGER NOT NULL DEFAULT 0,
+  trashed_at TEXT,
+  original_relative_path TEXT NOT NULL DEFAULT '',
+  original_directory TEXT NOT NULL DEFAULT '',
   added_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -55,6 +59,41 @@ CREATE TABLE IF NOT EXISTS media_tags (
   tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY (media_id, tag_id)
 );
+
+-- 4. Collections Table (Mixed-Media Polymorphic Sets)
+CREATE TABLE IF NOT EXISTS collections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid TEXT UNIQUE NOT NULL,
+  library_id INTEGER NOT NULL DEFAULT 1 REFERENCES libraries(id) ON DELETE CASCADE,
+  directory TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  source_url TEXT NOT NULL DEFAULT '',
+  cover_media_id INTEGER REFERENCES media(id) ON DELETE SET NULL,
+  item_count INTEGER NOT NULL DEFAULT 0,
+  image_count INTEGER NOT NULL DEFAULT 0,
+  video_count INTEGER NOT NULL DEFAULT 0,
+  total_bytes INTEGER NOT NULL DEFAULT 0,
+  is_trashed INTEGER NOT NULL DEFAULT 0,
+  trashed_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- 5. Collection Items Table (Ordered Linking)
+CREATE TABLE IF NOT EXISTS collection_items (
+  collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  sort_order INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (collection_id, media_id)
+);
+
+-- 6. Collection Tags Table
+CREATE TABLE IF NOT EXISTS collection_tags (
+  collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+  tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (collection_id, tag_id)
+);
 `;
 
 export const INDICES_SQL = `
@@ -65,6 +104,16 @@ CREATE INDEX IF NOT EXISTS idx_media_tags_tag_id ON media_tags(tag_id);
 CREATE INDEX IF NOT EXISTS idx_media_tags_media_id ON media_tags(media_id);
 CREATE INDEX IF NOT EXISTS idx_media_added_at ON media(added_at DESC);
 CREATE INDEX IF NOT EXISTS idx_media_filename ON media(filename);
+CREATE INDEX IF NOT EXISTS idx_media_is_trashed ON media(is_trashed);
+
+CREATE INDEX IF NOT EXISTS idx_collections_library ON collections(library_id);
+CREATE INDEX IF NOT EXISTS idx_collections_directory ON collections(directory);
+CREATE INDEX IF NOT EXISTS idx_collections_created_at ON collections(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_collections_is_trashed ON collections(is_trashed);
+CREATE INDEX IF NOT EXISTS idx_collection_items_col_order ON collection_items(collection_id, sort_order ASC);
+CREATE INDEX IF NOT EXISTS idx_collection_items_media ON collection_items(media_id);
+CREATE INDEX IF NOT EXISTS idx_collection_tags_col ON collection_tags(collection_id);
+CREATE INDEX IF NOT EXISTS idx_collection_tags_tag ON collection_tags(tag_id);
 `;
 
 export interface LibraryEntity {
@@ -96,9 +145,17 @@ export interface MediaEntity {
   title: string;
   notes: string;
   source_url: string;
+  is_trashed?: number;
+  trashed_at?: string | null;
+  original_relative_path?: string;
+  original_directory?: string;
   added_at: string;
   updated_at: string;
   library_name?: string;
+  collection_id?: number | null;
+  collection_title?: string | null;
+  collection_order?: number | null;
+  collection_total?: number | null;
 }
 
 export interface TagEntity {
@@ -111,6 +168,38 @@ export interface TagEntity {
 
 export interface MediaWithTags extends MediaEntity {
   tags: string[];
+}
+
+export interface CollectionEntity {
+  id: number;
+  uuid: string;
+  library_id: number;
+  directory: string;
+  title: string;
+  notes: string;
+  source_url: string;
+  cover_media_id: number | null;
+  item_count: number;
+  image_count: number;
+  video_count: number;
+  total_bytes: number;
+  is_trashed?: number;
+  trashed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  library_name?: string;
+}
+
+export interface CollectionItemEntity {
+  collection_id: number;
+  media_id: number;
+  sort_order: number;
+}
+
+export interface CollectionWithItems extends CollectionEntity {
+  tags: string[];
+  cover?: MediaEntity | null;
+  items: Array<MediaWithTags & { sort_order: number }>;
 }
 
 export class DbClient {
@@ -135,7 +224,7 @@ export class DbClient {
 
     const nowIso = new Date().toISOString();
 
-    // 2. Safe auto-migration for libraries & library_id
+    // 2. Safe auto-migration for libraries, media & collections
     try {
       // Seed default library if none exists
       const defaultLib = this.instance.prepare('SELECT id FROM libraries WHERE is_default = 1').get() as { id: number } | undefined;
@@ -159,6 +248,28 @@ export class DbClient {
       }
       if (!mediaColNames.has('directory')) {
         this.instance.exec("ALTER TABLE media ADD COLUMN directory TEXT NOT NULL DEFAULT ''");
+      }
+      if (!mediaColNames.has('is_trashed')) {
+        this.instance.exec('ALTER TABLE media ADD COLUMN is_trashed INTEGER NOT NULL DEFAULT 0');
+      }
+      if (!mediaColNames.has('trashed_at')) {
+        this.instance.exec('ALTER TABLE media ADD COLUMN trashed_at TEXT DEFAULT NULL');
+      }
+      if (!mediaColNames.has('original_relative_path')) {
+        this.instance.exec("ALTER TABLE media ADD COLUMN original_relative_path TEXT NOT NULL DEFAULT ''");
+      }
+      if (!mediaColNames.has('original_directory')) {
+        this.instance.exec("ALTER TABLE media ADD COLUMN original_directory TEXT NOT NULL DEFAULT ''");
+      }
+
+      // Check collections columns
+      const colColumns = this.instance.prepare('PRAGMA table_info(collections)').all() as Array<{ name: string }>;
+      const colColNames = new Set(colColumns.map((c) => c.name));
+      if (!colColNames.has('is_trashed')) {
+        this.instance.exec('ALTER TABLE collections ADD COLUMN is_trashed INTEGER NOT NULL DEFAULT 0');
+      }
+      if (!colColNames.has('trashed_at')) {
+        this.instance.exec('ALTER TABLE collections ADD COLUMN trashed_at TEXT DEFAULT NULL');
       }
 
       // Drop legacy single-column relative_path unique index if exists

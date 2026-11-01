@@ -87,7 +87,7 @@ export class DirectoryService {
         file_size: number;
       }
       const mediaRows = DbClient.queryAll<MediaStatRow>(
-        'SELECT directory, mime_type, file_size FROM media WHERE library_id = ?',
+        'SELECT directory, mime_type, file_size FROM media WHERE library_id = ? AND is_trashed = 0',
         [lib.id]
       );
 

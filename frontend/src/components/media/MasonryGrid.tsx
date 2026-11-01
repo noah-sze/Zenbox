@@ -1,24 +1,41 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { MediaItem } from '@/types/media';
+import { MediaItem, Collection } from '@/types/media';
 import { MediaCard } from './MediaCard';
+import { CollectionCard } from './CollectionCard';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+
+export type DisplayGridItem =
+  | { type: 'collection'; data: Collection }
+  | { type: 'media'; data: MediaItem };
 
 interface MasonryGridProps {
   items: MediaItem[];
+  collections?: Collection[];
+  isCollectionOnly?: boolean;
   isLoading: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
   onTagClick?: (tag: string) => void;
   onSelect?: (item: MediaItem) => void;
+  onSelectCollection?: (collection: Collection) => void;
+  selectedIds?: Set<number>;
+  onToggleSelectMedia?: (e: React.MouseEvent, item: MediaItem) => void;
+  isSelectionMode?: boolean;
 }
 
 export const MasonryGrid: React.FC<MasonryGridProps> = ({
   items,
+  collections = [],
+  isCollectionOnly = false,
   isLoading,
   hasMore,
   onLoadMore,
   onTagClick,
   onSelect,
+  onSelectCollection,
+  selectedIds,
+  onToggleSelectMedia,
+  isSelectionMode = false,
 }) => {
   const { sentinelRef } = useInfiniteScroll({
     hasMore,
@@ -26,7 +43,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
     onLoadMore,
   });
 
-  // Helper to determine column count based on viewport width (Option A)
+  // Helper to determine column count based on viewport width
   const getColumnCount = (width: number): number => {
     if (width < 640) return 2; // 手機版最少 2 列
     if (width < 900) return 3; // 平板 / 大手機橫向
@@ -55,21 +72,50 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
     return () => window.removeEventListener('resize', updateColumns);
   }, []);
 
+  // Prepare unified list of items to display
+  const combinedItems: DisplayGridItem[] = useMemo(() => {
+    if (isCollectionOnly) {
+      return collections.map((col) => ({ type: 'collection', data: col }));
+    }
+
+    // In mixed view:
+    // If a media item already belongs to a collection, we can represent the collection as a single card
+    // and exclude individual member items so that posts don't appear fragmented.
+    const collectionCards: DisplayGridItem[] = collections.map((col) => ({
+      type: 'collection',
+      data: col,
+    }));
+
+    // Find all media items that are not part of any collection
+    const standaloneMedia: DisplayGridItem[] = items
+      .filter((it) => !it.collection_id)
+      .map((it) => ({ type: 'media', data: it }));
+
+    // Merge and sort by added_at / created_at descending
+    return [...collectionCards, ...standaloneMedia].sort((a, b) => {
+      const timeA = a.type === 'collection' ? a.data.created_at : a.data.added_at;
+      const timeB = b.type === 'collection' ? b.data.created_at : b.data.added_at;
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
+    });
+  }, [items, collections, isCollectionOnly]);
+
   // Distribute items into columns to maintain balanced height without layout shifts
   const columns = useMemo(() => {
-    const cols: MediaItem[][] = Array.from({ length: columnCount }, () => []);
-    items.forEach((item, index) => {
+    const cols: DisplayGridItem[][] = Array.from({ length: columnCount }, () => []);
+    combinedItems.forEach((item, index) => {
       cols[index % columnCount].push(item);
     });
     return cols;
-  }, [items, columnCount]);
+  }, [combinedItems, columnCount]);
 
-  if (!isLoading && items.length === 0) {
+  if (!isLoading && combinedItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center border border-dashed border-border rounded-sm p-8">
-        <span className="text-sm font-mono text-muted-foreground">無媒體</span>
+        <span className="text-sm font-mono text-muted-foreground">
+          {isCollectionOnly ? '無合集' : '無媒體'}
+        </span>
         <span className="text-xs font-mono text-neutral-600 mt-1">
-          請將檔案放置於 /storage/originals
+          {isCollectionOnly ? '可在上傳時選取多個檔案建立合集' : '請將檔案放置於 /storage/originals'}
         </span>
       </div>
     );
@@ -86,14 +132,29 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
       >
         {columns.map((columnItems, colIdx) => (
           <div key={`col-${colIdx}`} className="min-w-0 flex flex-col gap-2.5 sm:gap-4 w-full">
-            {columnItems.map((item) => (
-              <MediaCard
-                key={item.id}
-                item={item}
-                onTagClick={onTagClick}
-                onSelect={onSelect}
-              />
-            ))}
+            {columnItems.map((entry) => {
+              if (entry.type === 'collection') {
+                return (
+                  <CollectionCard
+                    key={`col-${entry.data.id}`}
+                    collection={entry.data}
+                    onTagClick={onTagClick}
+                    onSelect={onSelectCollection}
+                  />
+                );
+              }
+              return (
+                <MediaCard
+                  key={`med-${entry.data.id}`}
+                  item={entry.data}
+                  onTagClick={onTagClick}
+                  onSelect={onSelect}
+                  isSelected={selectedIds?.has(entry.data.id)}
+                  onToggleSelect={onToggleSelectMedia}
+                  isSelectionMode={isSelectionMode}
+                />
+              );
+            })}
           </div>
         ))}
       </div>

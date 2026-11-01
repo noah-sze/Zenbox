@@ -48,7 +48,7 @@ const BreadcrumbLink = React.forwardRef<
       ref={ref}
       type="button"
       className={cn(
-        'transition-colors hover:text-white cursor-pointer select-none focus:outline-none',
+        'transition-colors hover:text-foreground cursor-pointer select-none focus:outline-none',
         className
       )}
       {...props}
@@ -66,7 +66,7 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn('font-bold text-white tracking-tight', className)}
+    className={cn('font-bold text-foreground tracking-tight', className)}
     {...props}
   />
 ));
@@ -80,7 +80,7 @@ const BreadcrumbSeparator = ({
   <li
     role="presentation"
     aria-hidden="true"
-    className={cn('text-neutral-600 [&>svg]:h-3.5 [&>svg]:w-3.5', className)}
+    className={cn('text-muted-foreground [&>svg]:h-3.5 [&>svg]:w-3.5', className)}
     {...props}
   >
     {children ?? <ChevronRight />}

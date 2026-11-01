@@ -105,22 +105,22 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
       {/* Instant Pop Modal Container */}
       <div className="relative z-50 flex flex-col w-full max-w-md bg-card border border-border rounded-sm overflow-hidden shadow-none font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-black">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
-            <FolderPlus className="h-4 w-4 text-white" />
-            <h2 className="text-sm font-bold text-white tracking-wide">新建文件夾</h2>
+            <FolderPlus className="h-4 w-4 text-foreground" />
+            <h2 className="text-sm font-bold text-foreground tracking-wide">新建文件夾</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded-sm transition-none"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-sm transition-none"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 bg-black text-xs">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 bg-card text-xs">
           {/* Target Library */}
           <div className="space-y-1.5">
             <label htmlFor="folder-lib-select" className="text-muted-foreground block text-[11px] uppercase tracking-wider">
@@ -151,7 +151,7 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => setParentPath('')}
-                  className="text-[10px] text-neutral-400 hover:text-white"
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
                 >
                   設為根目錄
                 </button>
@@ -164,7 +164,7 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
               value={parentPath}
               onChange={(e) => setParentPath(e.target.value)}
               disabled={isSubmitting}
-              className="w-full bg-card border border-border rounded-sm px-2.5 py-1.5 text-neutral-200 focus:outline-none focus:border-neutral-500"
+              className="w-full bg-card border border-border rounded-sm px-2.5 py-1.5 text-foreground focus:outline-none focus:border-foreground/40"
             />
           </div>
 
@@ -180,15 +180,15 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
               value={folderName}
               onChange={(e) => setFolderName(e.target.value)}
               disabled={isSubmitting}
-              className="w-full bg-card border border-border rounded-sm px-2.5 py-1.5 text-neutral-200 focus:outline-none focus:border-neutral-500"
+              className="w-full bg-card border border-border rounded-sm px-2.5 py-1.5 text-foreground focus:outline-none focus:border-foreground/40"
             />
           </div>
 
           {/* Preview */}
-          <div className="p-2.5 rounded-sm bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
+          <div className="p-2.5 rounded-sm bg-card border border-border text-[11px] text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
               <span>目標相對路徑:</span>
-              <Badge variant="outline" className="text-[10px] py-0 px-1 border-neutral-700 text-neutral-300">
+              <Badge variant="outline" className="text-[10px] py-0 px-1 border-border text-foreground">
                 {parentPath.trim()
                   ? `${parentPath.trim().replace(/^\/+|\/+$/g, '')}/${folderName.trim() || '...'}`
                   : folderName.trim() || '/'}
@@ -209,14 +209,14 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-sm border border-border text-neutral-400 hover:text-white transition-none disabled:opacity-50"
+              className="px-3 py-1.5 rounded-sm border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-none disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !folderName.trim()}
-              className="px-3.5 py-1.5 rounded-sm bg-white text-black font-bold hover:bg-neutral-200 transition-none disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-sm bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-none disabled:opacity-50"
             >
               {isSubmitting ? '建立中...' : '建立'}
             </button>

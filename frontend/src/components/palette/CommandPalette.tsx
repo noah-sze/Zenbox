@@ -10,7 +10,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command';
-import { Tag, RefreshCw } from 'lucide-react';
+import { Tag, RefreshCw, Link as LinkIcon, Upload as UploadIcon, Settings } from 'lucide-react';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -19,6 +19,8 @@ interface CommandPaletteProps {
   activeTags: string[];
   onToggleTag: (tag: string) => void;
   onTriggerSync: () => void;
+  onOpenCreateAsset?: (tab?: 'collect' | 'upload') => void;
+  onOpenSettings?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -28,6 +30,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   activeTags,
   onToggleTag,
   onTriggerSync,
+  onOpenCreateAsset,
+  onOpenSettings,
 }) => {
   // Global shortcut: Cmd+K or Ctrl+K
   React.useEffect(() => {
@@ -62,7 +66,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <Tag className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                   <span>{tag}</span>
                   {isActive && (
-                    <span className="ml-2 text-[10px] text-white font-semibold">
+                    <span className="ml-2 text-[10px] text-foreground font-semibold">
                       [ 已選 ]
                     </span>
                   )}
@@ -74,7 +78,48 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           <CommandSeparator />
 
+          <CommandGroup heading="資產操作">
+            {onOpenCreateAsset && (
+              <>
+                <CommandItem
+                  onSelect={() => {
+                    onOpenCreateAsset('collect');
+                    onOpenChange(false);
+                  }}
+                >
+                  <LinkIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <span>收集外部網址 (URL)</span>
+                  <CommandShortcut>NEW</CommandShortcut>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    onOpenCreateAsset('upload');
+                    onOpenChange(false);
+                  }}
+                >
+                  <UploadIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <span>上傳本機檔案</span>
+                  <CommandShortcut>UPLOAD</CommandShortcut>
+                </CommandItem>
+              </>
+            )}
+          </CommandGroup>
+
+          <CommandSeparator />
+
           <CommandGroup heading="系統操作">
+            {onOpenSettings && (
+              <CommandItem
+                onSelect={() => {
+                  onOpenSettings();
+                  onOpenChange(false);
+                }}
+              >
+                <Settings className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                <span>開啟系統設置</span>
+                <CommandShortcut>⌘,</CommandShortcut>
+              </CommandItem>
+            )}
             <CommandItem
               onSelect={() => {
                 onTriggerSync();

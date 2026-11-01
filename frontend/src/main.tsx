@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ToastProvider } from '@/components/ui/toast';
 import './index.css';
 
 // 開發模式下自動清理舊 Service Worker 與快取，杜絕快取殘留造成的執行期錯誤
@@ -21,6 +22,8 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </React.StrictMode>
 );

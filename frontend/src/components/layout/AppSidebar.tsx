@@ -9,6 +9,9 @@ import {
   Plus,
   X,
   FolderTree,
+  Layers,
+  Settings,
+  Trash2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -29,10 +32,11 @@ import {
 import { Tag, Library, DirectoryDetail } from '@/types/media';
 import { FolderTreeView } from '@/components/folder/FolderTreeView';
 
-export type MediaTypeFilter = 'all' | 'image' | 'video';
+export type MediaTypeFilter = 'all' | 'image' | 'video' | 'collection' | 'trash';
 
 interface AppSidebarProps {
   mediaCount: number;
+  trashCount?: number;
   availableTags: Tag[];
   activeTags: string[];
   onToggleTag: (tagName: string) => void;
@@ -53,10 +57,12 @@ interface AppSidebarProps {
   onSelectMediaType: (type: MediaTypeFilter) => void;
   isSyncing: boolean;
   onTriggerSync: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   mediaCount,
+  trashCount = 0,
   availableTags,
   activeTags,
   onToggleTag,
@@ -73,6 +79,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onSelectMediaType,
   isSyncing,
   onTriggerSync,
+  onOpenSettings,
 }) => {
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [folderSearchQuery, setFolderSearchQuery] = useState('');
@@ -87,11 +94,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       <SidebarHeader>
         <div className="flex items-center justify-between px-1 py-1">
           <div className="flex items-center space-x-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-white text-black font-bold text-xs select-none">
+            <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs select-none">
               Z
             </div>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="font-bold tracking-tight text-white text-sm">Zenbox</span>
+              <span className="font-bold tracking-tight text-sidebar-foreground text-sm">Zenbox</span>
               <span className="text-[10px] text-muted-foreground">視覺化第二大腦</span>
             </div>
           </div>
@@ -141,6 +148,31 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   <span className="group-data-[collapsible=icon]:hidden">影片</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'collection'}
+                  onClick={() => onSelectMediaType('collection')}
+                  tooltip="合集"
+                >
+                  <Layers className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">合集</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={mediaTypeFilter === 'trash'}
+                  onClick={() => onSelectMediaType('trash')}
+                  tooltip="垃圾桶"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">垃圾桶</span>
+                  {trashCount > 0 && (
+                    <SidebarMenuBadge className="font-mono">{trashCount}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -155,7 +187,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <button
                 type="button"
                 onClick={onOpenLibraries}
-                className="p-1 text-muted-foreground hover:text-white rounded-sm transition-none"
+                className="p-1 text-sidebar-foreground/70 hover:text-sidebar-foreground rounded-sm transition-none"
                 title="管理存儲庫"
               >
                 <HardDrive className="h-3.5 w-3.5" />
@@ -163,7 +195,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <button
                 type="button"
                 onClick={onOpenFolderOverview}
-                className="p-1 text-muted-foreground hover:text-white rounded-sm transition-none"
+                className="p-1 text-sidebar-foreground/70 hover:text-sidebar-foreground rounded-sm transition-none"
                 title="查看各庫文件夾詳細"
               >
                 <FolderTree className="h-3.5 w-3.5" />
@@ -185,7 +217,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 placeholder="過濾文件夾..."
                 value={folderSearchQuery}
                 onChange={(e) => setFolderSearchQuery(e.target.value)}
-                className="w-full bg-card border border-border text-[11px] text-neutral-300 px-2 py-1 rounded-sm focus:outline-none focus:border-neutral-500"
+                className="w-full bg-sidebar-accent/50 border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring"
               />
             </div>
           )}
@@ -214,7 +246,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <button
                 type="button"
                 onClick={onClearTags}
-                className="group-data-[collapsible=icon]:hidden text-[10px] text-neutral-400 hover:text-white flex items-center gap-1"
+                className="group-data-[collapsible=icon]:hidden text-[10px] text-sidebar-foreground/60 hover:text-sidebar-foreground flex items-center gap-1"
                 title="清除標籤過濾"
               >
                 <X className="h-3 w-3" />
@@ -231,7 +263,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 placeholder="過濾標籤..."
                 value={tagSearchQuery}
                 onChange={(e) => setTagSearchQuery(e.target.value)}
-                className="w-full bg-card border border-border text-[11px] text-neutral-300 px-2 py-1 rounded-sm focus:outline-none focus:border-neutral-500"
+                className="w-full bg-sidebar-accent/50 border border-sidebar-border text-[11px] text-sidebar-foreground placeholder:text-muted-foreground px-2 py-1 rounded-sm focus:outline-none focus:border-sidebar-ring"
               />
             </div>
           )}
@@ -274,7 +306,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       <SidebarFooter>
         <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-[11px] text-white">
+            <span className="text-[11px] text-sidebar-foreground font-medium">
               {isSyncing ? '比對中...' : '已就緒'}
             </span>
             <span className="text-[9px] text-muted-foreground">
@@ -282,17 +314,28 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={onTriggerSync}
-            disabled={isSyncing}
-            className="flex items-center justify-center h-8 w-8 rounded-sm border border-border bg-card text-muted-foreground hover:text-white hover:border-neutral-500 transition-colors disabled:opacity-50"
-            title="比對檔案系統與索引"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-white' : ''}`}
-            />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="flex items-center justify-center h-8 w-8 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:border-sidebar-ring transition-colors"
+              title="系統設置 (⌘,)"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onTriggerSync}
+              disabled={isSyncing}
+              className="flex items-center justify-center h-8 w-8 rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground/75 hover:text-sidebar-foreground hover:border-sidebar-ring transition-colors disabled:opacity-50"
+              title="比對檔案系統與索引"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-sidebar-foreground' : ''}`}
+              />
+            </button>
+          </div>
         </div>
       </SidebarFooter>
 

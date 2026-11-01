@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { CONFIG } from './config.js';
 import { DbClient, MediaEntity, MediaWithTags, TagEntity } from './db/client.js';
 import { runFullIndexScan } from './db/indexer.js';
@@ -14,6 +15,12 @@ import { StatsService } from './services/statsService.js';
 import { AuthService } from './auth/authService.js';
 import { streamFileWithRange } from './utils/stream.js';
 import { LibraryWatcherManager } from './watcher/fileWatcher.js';
+import {
+  CollectionService,
+  CreateCollectionPayload,
+  UpdateCollectionPayload,
+  ListCollectionsQuery,
+} from './services/collectionService.js';
 
 const app = new Hono();
 const watcherManager = new LibraryWatcherManager();
@@ -238,6 +245,10 @@ app.get('/api/media', (c) => {
   const whereClauses: string[] = [];
   const queryParams: (string | number)[] = [];
 
+  const isTrashed = c.req.query('is_trashed') === '1' || c.req.query('trash') === 'true' ? 1 : 0;
+  whereClauses.push('m.is_trashed = ?');
+  queryParams.push(isTrashed);
+
   if (libraryId !== undefined) {
     whereClauses.push('m.library_id = ?');
     queryParams.push(libraryId);
@@ -420,6 +431,41 @@ app.get('/api/media/:id/raw', async (c) => {
 // Media Management & Dual-Write Mutation Endpoints
 // -------------------------------------------------------------
 
+// Collect media from remote URL
+app.post('/api/collect', async (c) => {
+  try {
+    const body = await c.req.json<{
+      url: string;
+      title?: string;
+      notes?: string;
+      tags?: string[];
+      directory?: string;
+      libraryId?: number;
+    }>();
+
+    if (!body.url || !body.url.trim()) {
+      return c.json({ error: '請輸入有效的 URL' }, 400);
+    }
+
+    const created = await MediaManageService.collectUrl(body.url.trim(), {
+      title: body.title,
+      notes: body.notes,
+      tags: body.tags,
+      directory: body.directory,
+      libraryId: body.libraryId
+    });
+
+    return c.json({
+      success: true,
+      data: created
+    }, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '收錄失敗';
+    console.error('[Collect] Error:', err);
+    return c.json({ error: message }, 400);
+  }
+});
+
 // Upload media file (multipart/form-data)
 app.post('/api/upload', async (c) => {
   try {
@@ -504,14 +550,201 @@ app.put('/api/media/:id/tags', async (c) => {
   }
 });
 
-// Delete media item
+// Delete media item (soft-delete to trash)
 app.delete('/api/media/:id', async (c) => {
   const mediaId = Number(c.req.param('id'));
   try {
-    await MediaManageService.deleteMedia(mediaId);
+    await MediaManageService.moveToTrash(mediaId);
     return c.json({
       success: true,
       mediaId,
+      message: '已移至垃圾桶'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '刪除失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Explicitly move media item to trash
+app.post('/api/media/:id/trash', async (c) => {
+  const mediaId = Number(c.req.param('id'));
+  try {
+    await MediaManageService.moveToTrash(mediaId);
+    return c.json({
+      success: true,
+      mediaId,
+      message: '已移至垃圾桶'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '移至垃圾桶失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Restore media item from trash
+app.post('/api/media/:id/restore', async (c) => {
+  const mediaId = Number(c.req.param('id'));
+  try {
+    const restored = await MediaManageService.restoreMedia(mediaId);
+    return c.json({
+      success: true,
+      data: restored,
+      message: '已還原'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '還原失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Permanently delete media item
+app.delete('/api/media/:id/permanent', async (c) => {
+  const mediaId = Number(c.req.param('id'));
+  try {
+    await MediaManageService.deletePermanently(mediaId);
+    return c.json({
+      success: true,
+      mediaId,
+      message: '已刪除'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '永久刪除失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// -------------------------------------------------------------
+// Collection Management Endpoints
+// -------------------------------------------------------------
+
+// List collections with filtering (libraryId, directory, tags, keyword, pagination)
+app.get('/api/collections', async (c) => {
+  try {
+    const query: ListCollectionsQuery = {
+      libraryId: c.req.query('libraryId') ? Number(c.req.query('libraryId')) : undefined,
+      directory: c.req.query('dir'),
+      tags: c.req.query('tags'),
+      q: c.req.query('q'),
+      page: c.req.query('page') ? Number(c.req.query('page')) : undefined,
+      limit: c.req.query('limit') ? Number(c.req.query('limit')) : undefined,
+    };
+    const result = await CollectionService.listCollections(query);
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '讀取失敗';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// Get single collection with ordered member items
+app.get('/api/collections/:id', async (c) => {
+  const idOrUuid = c.req.param('id');
+  try {
+    const collection = await CollectionService.getCollection(idOrUuid);
+    if (!collection) {
+      return c.json({ error: '無此合集' }, 404);
+    }
+    return c.json({ data: collection });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '讀取失敗';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// Create collection
+app.post('/api/collections', async (c) => {
+  try {
+    const body = await c.req.json<CreateCollectionPayload>();
+    const created = await CollectionService.createCollection(body);
+    return c.json({
+      success: true,
+      data: created,
+      message: '已建立'
+    }, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '建立失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Update collection metadata or reorder items
+app.patch('/api/collections/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  try {
+    const body = await c.req.json<UpdateCollectionPayload>();
+    const updated = await CollectionService.updateCollection(id, body);
+    return c.json({
+      success: true,
+      data: updated,
+      message: '已儲存'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '儲存失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Delete collection (soft-delete to trash)
+app.delete('/api/collections/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+
+  try {
+    await CollectionService.deleteCollection(id);
+    return c.json({
+      success: true,
+      id,
+      message: '已移至垃圾桶'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '刪除失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Move collection to trash
+app.post('/api/collections/:id/trash', async (c) => {
+  const id = Number(c.req.param('id'));
+  try {
+    await CollectionService.moveToTrash(id);
+    return c.json({
+      success: true,
+      id,
+      message: '已移至垃圾桶'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '移至垃圾桶失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Restore collection from trash
+app.post('/api/collections/:id/restore', async (c) => {
+  const id = Number(c.req.param('id'));
+  try {
+    await CollectionService.restoreCollection(id);
+    return c.json({
+      success: true,
+      id,
+      message: '已還原'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '還原失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Permanently delete collection
+app.delete('/api/collections/:id/permanent', async (c) => {
+  const id = Number(c.req.param('id'));
+  const keepFilesParam = c.req.query('keepFiles');
+  const keepFiles = keepFilesParam === undefined ? true : keepFilesParam === 'true' || keepFilesParam === '1';
+
+  try {
+    await CollectionService.deletePermanently(id, keepFiles);
+    return c.json({
+      success: true,
+      id,
       message: '已刪除'
     });
   } catch (err) {
@@ -521,15 +754,216 @@ app.delete('/api/media/:id', async (c) => {
 });
 
 // -------------------------------------------------------------
+// Trash Query & Empty Endpoints
+// -------------------------------------------------------------
+
+// List all trashed items (media & collections) with volume stats
+app.get('/api/trash', async (c) => {
+  try {
+    const libraryId = c.req.query('libraryId') ? Number(c.req.query('libraryId')) : undefined;
+    const page = Math.max(1, Number(c.req.query('page')) || 1);
+    const limit = Math.min(100, Math.max(1, Number(c.req.query('limit')) || 24));
+    const offset = (page - 1) * limit;
+
+    let mediaSql = 'SELECT m.* FROM media m WHERE m.is_trashed = 1';
+    const mediaParams: (string | number)[] = [];
+    if (libraryId !== undefined) {
+      mediaSql += ' AND m.library_id = ?';
+      mediaParams.push(libraryId);
+    }
+    mediaSql += ' ORDER BY m.trashed_at DESC, m.id DESC LIMIT ? OFFSET ?';
+    const trashedMedia = DbClient.queryAll<MediaEntity>(mediaSql, [...mediaParams, limit, offset]);
+
+    const trashedCollections = await CollectionService.listCollections({
+      libraryId,
+      isTrashed: true,
+      limit: 50
+    });
+
+    let countSql = 'SELECT COUNT(*) as count, COALESCE(SUM(file_size), 0) as total_bytes FROM media WHERE is_trashed = 1';
+    const countParams: number[] = [];
+    if (libraryId !== undefined) {
+      countSql += ' AND library_id = ?';
+      countParams.push(libraryId);
+    }
+    const statRow = DbClient.queryOne<{ count: number; total_bytes: number }>(countSql, countParams);
+
+    const hydratedMedia: MediaWithTags[] = trashedMedia.map((item) => {
+      const tagRows = DbClient.queryAll<{ name: string }>(
+        `SELECT t.name FROM tags t
+         INNER JOIN media_tags mt ON t.id = mt.tag_id
+         WHERE mt.media_id = ?`,
+        [item.id]
+      );
+      return {
+        ...item,
+        tags: tagRows.map((r) => r.name)
+      };
+    });
+
+    return c.json({
+      data: {
+        media: hydratedMedia,
+        collections: trashedCollections.data,
+        stats: {
+          mediaCount: statRow ? Number(statRow.count) : 0,
+          collectionCount: trashedCollections.count,
+          totalBytes: statRow ? Number(statRow.total_bytes) : 0
+        }
+      },
+      page,
+      limit
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '讀取垃圾桶失敗';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// Empty trash (permanently delete all trashed media & collections)
+app.post('/api/trash/empty', async (c) => {
+  try {
+    const libraryId = c.req.query('libraryId') ? Number(c.req.query('libraryId')) : undefined;
+    const mediaResult = await MediaManageService.emptyTrash(libraryId);
+
+    let colSql = 'SELECT id FROM collections WHERE is_trashed = 1';
+    const colParams: number[] = [];
+    if (libraryId !== undefined) {
+      colSql += ' AND library_id = ?';
+      colParams.push(libraryId);
+    }
+    const trashedCols = DbClient.queryAll<{ id: number }>(colSql, colParams);
+    for (const col of trashedCols) {
+      await CollectionService.deletePermanently(col.id, true);
+    }
+
+    return c.json({
+      success: true,
+      count: mediaResult.count + trashedCols.length,
+      bytesFreed: mediaResult.bytesFreed,
+      message: '已清空'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '清空垃圾桶失敗';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// Batch Multi-Item Operations Endpoints
+// -------------------------------------------------------------
+
+interface BatchTrashPayload {
+  mediaIds?: number[];
+  collectionIds?: number[];
+}
+
+// Batch move items to trash
+app.post('/api/batch/trash', async (c) => {
+  try {
+    const body = await c.req.json<BatchTrashPayload>().catch(() => ({} as BatchTrashPayload));
+    const mediaIds = body.mediaIds || [];
+    const collectionIds = body.collectionIds || [];
+
+    let trashedMediaCount = 0;
+    if (mediaIds.length > 0) {
+      trashedMediaCount = await MediaManageService.batchMoveToTrash(mediaIds);
+    }
+
+    let trashedCollectionCount = 0;
+    for (const cid of collectionIds) {
+      try {
+        await CollectionService.moveToTrash(cid);
+        trashedCollectionCount++;
+      } catch (err) {
+        console.warn(`[Batch] Failed moving collection #${cid} to trash:`, err);
+      }
+    }
+
+    return c.json({
+      success: true,
+      trashedMediaCount,
+      trashedCollectionCount,
+      totalTrashed: trashedMediaCount + trashedCollectionCount,
+      message: '已移至垃圾桶'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '批量移至垃圾桶失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Batch update tags
+app.post('/api/batch/tags', async (c) => {
+  try {
+    const body = await c.req.json<{
+      mediaIds: number[];
+      addTags?: string[];
+      removeTags?: string[];
+    }>();
+
+    if (!Array.isArray(body.mediaIds) || body.mediaIds.length === 0) {
+      return c.json({ error: '請指定媒體項目' }, 400);
+    }
+
+    const affected = await MediaManageService.batchUpdateTags(
+      body.mediaIds,
+      body.addTags || [],
+      body.removeTags || []
+    );
+
+    return c.json({
+      success: true,
+      affectedCount: affected,
+      message: '已更新標籤'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '批量更新標籤失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// Batch move directory / library
+app.post('/api/batch/move', async (c) => {
+  try {
+    const body = await c.req.json<{
+      mediaIds: number[];
+      targetLibraryId?: number;
+      targetDirectory: string;
+    }>();
+
+    if (!Array.isArray(body.mediaIds) || body.mediaIds.length === 0) {
+      return c.json({ error: '請指定媒體項目' }, 400);
+    }
+
+    const moved = await MediaManageService.batchMoveDirectory(
+      body.mediaIds,
+      body.targetLibraryId,
+      body.targetDirectory ?? ''
+    );
+
+    return c.json({
+      success: true,
+      movedCount: moved,
+      message: '已移動'
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '批量移動失敗';
+    return c.json({ error: message }, 400);
+  }
+});
+
+// -------------------------------------------------------------
 // Tag Management Endpoints
 // -------------------------------------------------------------
 
-// Get all tags with usage count
+// Get all tags with usage count (active items only)
 app.get('/api/tags', (c) => {
   const tags = DbClient.queryAll<TagEntity>(
-    `SELECT t.id, t.name, t.color, t.created_at, COUNT(mt.media_id) as count
+    `SELECT t.id, t.name, t.color, t.created_at, COUNT(m.id) as count
      FROM tags t
      LEFT JOIN media_tags mt ON t.id = mt.tag_id
+     LEFT JOIN media m ON mt.media_id = m.id AND m.is_trashed = 0
      GROUP BY t.id
      ORDER BY count DESC, t.name ASC`
   );
@@ -595,6 +1029,61 @@ app.post('/api/thumbnails/generate', async (c) => {
     queued,
     message: `已排入 ${queued} 個項目的縮圖處理佇列`
   });
+});
+
+// Clear derivation cache directory (/storage/cache)
+app.post('/api/cache/clear', async (c) => {
+  try {
+    let deletedCount = 0;
+    let freedBytes = 0;
+
+    const clearDir = async (dirPath: string) => {
+      if (!existsSync(dirPath)) return;
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          await clearDir(fullPath);
+          await fs.rmdir(fullPath).catch(() => {});
+        } else if (entry.isFile()) {
+          const stat = await fs.stat(fullPath).catch(() => null);
+          if (stat) freedBytes += stat.size;
+          await fs.unlink(fullPath).catch(() => {});
+          deletedCount++;
+        }
+      }
+    };
+
+    await clearDir(CONFIG.CACHE_DIR);
+    return c.json({
+      success: true,
+      deletedCount,
+      freedBytes,
+      message: '已清空'
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '清空快取失敗';
+    return c.json({ error: msg }, 500);
+  }
+});
+
+// Prune orphan tags that have no media or collections attached
+app.post('/api/tags/prune', (c) => {
+  try {
+    const changes = DbClient.execute(
+      `DELETE FROM tags 
+       WHERE id NOT IN (SELECT DISTINCT tag_id FROM media_tags)
+         AND id NOT IN (SELECT DISTINCT tag_id FROM collection_tags)`
+    );
+    return c.json({
+      success: true,
+      prunedCount: changes,
+      message: '已清理'
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '清理標籤失敗';
+    return c.json({ error: msg }, 500);
+  }
 });
 
 // -------------------------------------------------------------

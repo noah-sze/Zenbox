@@ -77,11 +77,11 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
       {/* Instant Pop Modal Container */}
       <div className="relative z-50 flex flex-col w-full max-w-4xl max-h-[85vh] bg-card border border-border rounded-sm overflow-hidden shadow-none font-mono">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-black">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
           <div className="flex items-center space-x-2">
-            <Folder className="h-4 w-4 text-white" />
-            <h2 className="text-sm font-bold text-white tracking-wide">各庫文件夾詳細總覽</h2>
-            <Badge variant="secondary" className="text-[10px] py-0 px-1.5 border-neutral-700">
+            <Folder className="h-4 w-4 text-foreground" />
+            <h2 className="text-sm font-bold text-foreground tracking-wide">各庫文件夾詳細總覽</h2>
+            <Badge variant="secondary" className="text-[10px] py-0 px-1.5 border-border">
               {filteredDirs.length} 個目錄
             </Badge>
           </div>
@@ -90,15 +90,15 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
               type="button"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="text-neutral-400 hover:text-white p-1 rounded-sm transition-none"
+              className="text-muted-foreground hover:text-foreground p-1 rounded-sm transition-none"
               title="重新載入"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-white p-1 rounded-sm transition-none"
+              className="text-muted-foreground hover:text-foreground p-1 rounded-sm transition-none"
             >
               <X className="h-4 w-4" />
             </button>
@@ -106,7 +106,7 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
         </div>
 
         {/* Toolbar: Library Filter & Search */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-5 py-2.5 border-b border-border bg-neutral-950 text-xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-5 py-2.5 border-b border-border bg-muted/40 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground shrink-0 text-[11px] uppercase">篩選來源:</span>
             <select
@@ -143,7 +143,7 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
         </div>
 
         {/* Table / List Body */}
-        <div className="flex-1 overflow-y-auto p-5 bg-black text-xs">
+        <div className="flex-1 overflow-y-auto p-5 bg-card text-xs">
           {filteredDirs.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               無文件夾
@@ -168,17 +168,17 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                     return (
                       <tr
                         key={`${dir.libraryId}-${dir.directory}`}
-                        className="hover:bg-neutral-900/60 transition-none group"
+                        className="hover:bg-accent/40 transition-none group"
                       >
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
-                            <Folder className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                            <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <div className="min-w-0">
-                              <span className="font-bold text-white text-xs block truncate">
+                              <span className="font-bold text-foreground text-xs block truncate">
                                 {isRoot ? `${dir.name} (根目錄)` : dir.name}
                               </span>
                               {!isRoot && (
-                                <span className="text-[10px] text-neutral-400 block truncate">
+                                <span className="text-[10px] text-muted-foreground block truncate">
                                   /{dir.directory}
                                 </span>
                               )}
@@ -187,26 +187,26 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                         </td>
 
                         <td className="py-2.5 px-3">
-                          <span className="text-neutral-300 flex items-center gap-1">
-                            <HardDrive className="h-3 w-3 text-neutral-400" />
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <HardDrive className="h-3 w-3 text-muted-foreground" />
                             {dir.libraryName}
                           </span>
                         </td>
 
-                        <td className="py-2.5 px-3 text-right text-white font-mono">
+                        <td className="py-2.5 px-3 text-right text-foreground font-semibold font-mono">
                           <span>{dir.mediaCount}</span>
-                          <span className="text-neutral-500 text-[10px] ml-1">/ {dir.totalRecursiveCount}</span>
+                          <span className="text-muted-foreground text-[10px] ml-1">/ {dir.totalRecursiveCount}</span>
                         </td>
 
-                        <td className="py-2.5 px-3 text-right text-neutral-300 font-mono">
+                        <td className="py-2.5 px-3 text-right text-muted-foreground font-mono">
                           {formatBytes(dir.totalBytes)}
                         </td>
 
-                        <td className="py-2.5 px-3 text-right text-neutral-400 font-mono text-[11px]">
+                        <td className="py-2.5 px-3 text-right text-muted-foreground font-mono text-[11px]">
                           {dir.imageCount} 圖 / {dir.videoCount} 片
                         </td>
 
-                        <td className="py-2.5 px-3 text-right text-neutral-400 font-mono">
+                        <td className="py-2.5 px-3 text-right text-muted-foreground font-mono">
                           {dir.subDirectoryCount}
                         </td>
 
@@ -215,7 +215,7 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                             <button
                               type="button"
                               onClick={() => onOpenDetail(dir)}
-                              className="p-1 rounded-sm text-neutral-400 hover:text-white hover:bg-neutral-800 transition-none"
+                              className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-none"
                               title="查看詳細"
                             >
                               <Info className="h-3.5 w-3.5" />
@@ -226,7 +226,7 @@ export const FolderOverviewDialog: React.FC<FolderOverviewDialogProps> = ({
                                 onSelectDirectory(dir);
                                 onClose();
                               }}
-                              className="flex items-center gap-1 px-2 py-1 rounded-sm bg-neutral-800 hover:bg-neutral-700 text-white text-[11px] font-bold transition-none"
+                              className="flex items-center gap-1 px-2 py-1 rounded-sm bg-secondary hover:bg-accent text-secondary-foreground hover:text-foreground border border-border text-[11px] font-bold transition-none"
                               title="在畫布中瀏覽"
                             >
                               <span>瀏覽</span>

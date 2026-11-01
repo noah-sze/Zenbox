@@ -148,7 +148,7 @@ export const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderP
             } as React.CSSProperties
           }
           className={cn(
-            'group/sidebar-wrapper flex min-h-screen w-full has-[[data-variant=inset]]:bg-black text-white font-mono',
+            'group/sidebar-wrapper flex min-h-screen w-full has-[[data-variant=inset]]:bg-background text-foreground font-mono',
             className
           )}
           {...props}
@@ -269,7 +269,7 @@ export const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       type="button"
       className={cn(
-        'inline-flex items-center justify-center h-8 w-8 rounded-sm border border-border bg-card text-muted-foreground hover:text-white hover:border-neutral-500 transition-colors shadow-none',
+        'inline-flex items-center justify-center h-8 w-8 rounded-sm border border-border bg-card text-muted-foreground hover:text-foreground hover:border-border transition-colors shadow-none',
         className
       )}
       onClick={(event) => {
@@ -318,7 +318,7 @@ export const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        'relative flex min-h-screen flex-1 flex-col bg-black overflow-x-hidden',
+        'relative flex min-h-screen flex-1 flex-col bg-background overflow-x-hidden',
         className
       )}
       {...props}
@@ -432,7 +432,7 @@ export const SidebarGroupAction = React.forwardRef<
       ref={ref}
       data-sidebar="group-action"
       className={cn(
-        'absolute right-2 top-1.5 flex h-5 w-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-neutral-800 hover:text-white focus:outline-none group-data-[collapsible=icon]:hidden',
+        'absolute right-2 top-1.5 flex h-5 w-5 items-center justify-center rounded-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none group-data-[collapsible=icon]:hidden',
         className
       )}
       {...props}
@@ -487,12 +487,12 @@ export const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = 'SidebarMenuItem';
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left text-xs font-mono outline-none transition-colors hover:bg-neutral-900 hover:text-white focus-visible:ring-1 focus-visible:ring-neutral-400 active:bg-neutral-900 disabled:pointer-events-none disabled:opacity-50 select-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
+  'peer/menu-button flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left text-xs font-mono outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring active:bg-sidebar-accent disabled:pointer-events-none disabled:opacity-50 select-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
   {
     variants: {
       variant: {
-        default: 'text-neutral-300 hover:text-white',
-        outline: 'border border-border bg-card hover:bg-neutral-900',
+        default: 'text-sidebar-foreground/85 hover:text-sidebar-foreground',
+        outline: 'border border-sidebar-border bg-sidebar hover:bg-sidebar-accent',
       },
       size: {
         default: 'h-8 px-2',
@@ -539,7 +539,7 @@ export const SidebarMenuButton = React.forwardRef<
         title={tooltip}
         className={cn(
           sidebarMenuButtonVariants({ variant, size }),
-          isActive && 'bg-neutral-900 text-white font-medium border-l-2 border-white pl-1.5',
+          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-sidebar-primary pl-1.5',
           className
         )}
         {...props}
@@ -560,7 +560,7 @@ export const SidebarMenuBadge = React.forwardRef<
       ref={ref}
       data-sidebar="menu-badge"
       className={cn(
-        'ml-auto text-[10px] tabular-nums text-muted-foreground group-data-[collapsible=icon]:hidden px-1.5 py-0.5 rounded-sm border border-border bg-card',
+        'ml-auto text-[10px] tabular-nums text-sidebar-foreground/75 group-data-[collapsible=icon]:hidden px-1.5 py-0.5 rounded-sm border border-sidebar-border bg-sidebar-accent/50',
         className
       )}
       {...props}
@@ -609,8 +609,8 @@ export const SidebarMenuSubButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        'flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-sm px-2 text-xs text-muted-foreground outline-none hover:bg-neutral-900 hover:text-white focus-visible:ring-1 focus-visible:ring-neutral-400',
-        isActive && 'bg-neutral-900 text-white font-medium',
+        'flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-sm px-2 text-xs text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring',
+        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
         className
       )}
       {...props}

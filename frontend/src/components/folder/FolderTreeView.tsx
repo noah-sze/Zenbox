@@ -236,7 +236,7 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
                 <button
                   type="button"
                   onClick={(e) => toggleExpand(e, node.key)}
-                  className="p-0.5 text-neutral-400 hover:text-white rounded-sm transition-none"
+                  className="p-0.5 text-sidebar-foreground/60 hover:text-sidebar-foreground rounded-sm transition-none"
                   title={isExpanded ? '收起' : '展開'}
                 >
                   {isExpanded ? (
@@ -246,7 +246,7 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
                   )}
                 </button>
               ) : (
-                <span className="w-1 h-1 rounded-full bg-neutral-700/60 block" />
+                <span className="w-1 h-1 rounded-full bg-sidebar-border block" />
               )}
             </div>
 
@@ -260,12 +260,12 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
             >
               {isRoot ? (
                 <HardDrive
-                  className={`h-3.5 w-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-neutral-400'}`}
+                  className={`h-3.5 w-3.5 shrink-0 ${isSelected ? 'text-sidebar-primary' : 'text-sidebar-foreground/70'}`}
                 />
               ) : isSelected || isExpanded ? (
-                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-white" />
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-sidebar-primary" />
               ) : (
-                <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <Folder className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/60" />
               )}
 
               <span className="truncate group-data-[collapsible=icon]:hidden text-xs">
@@ -273,7 +273,7 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
               </span>
 
               {isRoot && node.isReadonly && (
-                <span className="group-data-[collapsible=icon]:hidden text-[9px] text-neutral-500 border border-border px-1 rounded-sm shrink-0">
+                <span className="group-data-[collapsible=icon]:hidden text-[9px] text-sidebar-foreground/60 border border-sidebar-border px-1 rounded-sm shrink-0">
                   唯讀
                 </span>
               )}
@@ -289,7 +289,7 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
                   e.stopPropagation();
                   onOpenFolderDetail(node.detail);
                 }}
-                className="p-1 rounded-sm text-neutral-400 hover:text-white hover:bg-neutral-800 transition-none"
+                className="p-1 rounded-sm text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-none"
                 title="文件夾詳細"
               >
                 <Info className="h-3 w-3" />
@@ -301,7 +301,7 @@ export const FolderTreeView: React.FC<FolderTreeViewProps> = ({
                     e.stopPropagation();
                     onOpenCreateFolder(node.libraryId, node.directory);
                   }}
-                  className="p-1 rounded-sm text-neutral-400 hover:text-white hover:bg-neutral-800 transition-none"
+                  className="p-1 rounded-sm text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-none"
                   title="在此新建子文件夾"
                 >
                   <Plus className="h-3 w-3" />

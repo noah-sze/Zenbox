@@ -9,7 +9,7 @@
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
 
-  /* Dark Theme Tokens (Vercel-inspired Minimalist) */
+  /* Default Theme Tokens: OLED Pure Black (Vercel-inspired Minimalist) */
   --background: #000000;
   --foreground: #ededed;
 
@@ -38,7 +38,7 @@
   --input: #262626;
   --ring: #ededed;
 
-  /* Frosted Glass Overlay with built-in Alpha (prevents WebKit color-mix bugs) */
+  /* Frosted Glass Overlay with built-in Alpha */
   --overlay: rgba(0, 0, 0, 0.82);
 
   /* Sidebar Design Tokens */
@@ -52,6 +52,188 @@
   --sidebar-ring: #ededed;
   --sidebar-width: 16rem;
   --sidebar-width-icon: 3.5rem;
+
+  /* Scrollbar Tokens */
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #262626;
+  --scrollbar-thumb-hover: #404040;
+}
+
+/* -------------------------------------------------------------------------- */
+/* THEME 1: OLED Pure Black                                                   */
+/* -------------------------------------------------------------------------- */
+[data-theme="oled"] {
+  --background: #000000;
+  --foreground: #ededed;
+  --card: #0a0a0a;
+  --card-foreground: #ededed;
+  --popover: #0a0a0a;
+  --popover-foreground: #ededed;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #171717;
+  --secondary-foreground: #ededed;
+  --muted: #171717;
+  --muted-foreground: #a1a1a1;
+  --accent: #262626;
+  --accent-foreground: #ffffff;
+  --border: #262626;
+  --input: #262626;
+  --ring: #ededed;
+  --overlay: rgba(0, 0, 0, 0.85);
+
+  --sidebar-background: #050505;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #262626;
+  --sidebar-ring: #ededed;
+
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #262626;
+  --scrollbar-thumb-hover: #404040;
+}
+
+/* -------------------------------------------------------------------------- */
+/* THEME 2: Zinc Charcoal (Softer High-Contrast Dark)                         */
+/* -------------------------------------------------------------------------- */
+[data-theme="zinc"] {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #18181b;
+  --card-foreground: #f4f4f5;
+  --popover: #18181b;
+  --popover-foreground: #f4f4f5;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #27272a;
+  --secondary-foreground: #f4f4f5;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #3f3f46;
+  --accent-foreground: #ffffff;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #d4d4d8;
+  --overlay: rgba(9, 9, 11, 0.85);
+
+  --sidebar-background: #101014;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #18181b;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #d4d4d8;
+
+  --scrollbar-track: #09090b;
+  --scrollbar-thumb: #27272a;
+  --scrollbar-thumb-hover: #3f3f46;
+}
+
+/* -------------------------------------------------------------------------- */
+/* THEME 3: Slate Dark (Cold Tech Blue)                                       */
+/* -------------------------------------------------------------------------- */
+[data-theme="slate"] {
+  --background: #0b0f17;
+  --foreground: #e2e8f0;
+  --card: #111827;
+  --card-foreground: #e2e8f0;
+  --popover: #111827;
+  --popover-foreground: #e2e8f0;
+  --primary: #f8fafc;
+  --primary-foreground: #0f172a;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #38bdf8;
+  --overlay: rgba(11, 15, 23, 0.85);
+
+  --sidebar-background: #080d14;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #f8fafc;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #38bdf8;
+
+  --scrollbar-track: #0b0f17;
+  --scrollbar-thumb: #1e293b;
+  --scrollbar-thumb-hover: #334155;
+}
+
+/* -------------------------------------------------------------------------- */
+/* THEME 4: Paper Light (Clean, High-Signal, Flat Light)                      */
+/* -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #fafafa;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #09090b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #e4e4e7;
+  --accent-foreground: #09090b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #09090b;
+  --overlay: rgba(0, 0, 0, 0.45);
+
+  --sidebar-background: #f7f7f8;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #09090b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaeaea;
+  --sidebar-accent-foreground: #09090b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #09090b;
+
+  --scrollbar-track: #f4f4f5;
+  --scrollbar-thumb: #d4d4d8;
+  --scrollbar-thumb-hover: #a1a1aa;
+}
+
+/* -------------------------------------------------------------------------- */
+/* ACCENT COLOR MODIFIERS (Applied via data-accent)                            */
+/* -------------------------------------------------------------------------- */
+[data-accent="cyan"] {
+  --ring: #06b6d4;
+  --sidebar-ring: #06b6d4;
+}
+[data-accent="amber"] {
+  --ring: #f59e0b;
+  --sidebar-ring: #f59e0b;
+}
+[data-accent="emerald"] {
+  --ring: #10b981;
+  --sidebar-ring: #10b981;
+}
+[data-accent="purple"] {
+  --ring: #a855f7;
+  --sidebar-ring: #a855f7;
+}
+
+/* -------------------------------------------------------------------------- */
+/* UI DENSITY (Compact mode tweaks)                                           */
+/* -------------------------------------------------------------------------- */
+[data-density="compact"] {
+  font-size: 13px;
 }
 
 * {
@@ -68,6 +250,7 @@ body {
   padding-bottom: var(--sab);
   padding-left: var(--sal);
   padding-right: var(--sar);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Custom Minimal Scrollbar */
@@ -77,14 +260,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: var(--scrollbar-thumb-hover);
 }

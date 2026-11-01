@@ -17,6 +17,38 @@ export interface MediaItem {
   added_at: string;
   updated_at: string;
   tags: string[];
+  collection_id?: number | null;
+  collection_order?: number | null;
+  is_trashed?: number;
+  trashed_at?: string | null;
+  original_relative_path?: string;
+  original_directory?: string;
+}
+
+export interface CollectionItem extends MediaItem {
+  sort_order?: number;
+}
+
+export interface Collection {
+  id: number;
+  library_id: number;
+  uuid: string;
+  title: string;
+  notes?: string;
+  source_url?: string;
+  directory: string;
+  cover_media_id?: number;
+  item_count: number;
+  image_count: number;
+  video_count: number;
+  total_bytes: number;
+  is_trashed?: number;
+  trashed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  tags: string[];
+  cover?: MediaItem | null;
+  items?: CollectionItem[];
 }
 
 export interface Tag {
@@ -64,6 +96,41 @@ export interface ApiResponse<T> {
   page?: number;
   limit?: number;
   count?: number;
+}
+
+export interface SystemStats {
+  media: {
+    total: number;
+    images: number;
+    videos: number;
+    other: number;
+  };
+  tags: {
+    total: number;
+    topTags: Array<{ name: string; count: number }>;
+  };
+  storage: {
+    originalsBytes: number;
+    cacheBytes: number;
+    totalBytes: number;
+  };
+  trash?: {
+    total: number;
+    bytes: number;
+  };
+  uptimeSeconds: number;
+}
+
+export interface TrashStats {
+  mediaCount: number;
+  collectionCount: number;
+  totalBytes: number;
+}
+
+export interface TrashData {
+  media: MediaItem[];
+  collections: Collection[];
+  stats: TrashStats;
 }
 
 
